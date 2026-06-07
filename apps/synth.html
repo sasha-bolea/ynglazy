@@ -9,318 +9,373 @@
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 /* =========================================================
-   SYNTH — app standalone (iframe). Tastiera pixel-art + Web Audio.
+   SYNTH — pannello scheuomorfico analogico + sci-fi.
+   PC-98 denso · Lain (hex) · viti/manopole/levette · oscilloscopio/Nixie.
    ========================================================= */
 :root{
-  --white:#f0ede8; --offwhite:#e2ddd6; --grey-l:#c8c3bc;
-  --grey-m:#8a857e; --grey-d:#3a3732; --black:#111010;
-  --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --white:#f0ede8; --grey-l:#c8c3bc; --grey-m:#8a857e; --grey-d:#3a3732;
+  --black:#111010; --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
   --glow-ph:0 0 4px rgba(212,245,160,.55);
-  --glow-am:0 0 4px rgba(255,204,68,.55);
+  --glow-am:0 0 5px rgba(255,204,68,.6);
+  --metal: linear-gradient(180deg,#2b2824 0%,#211e1b 50%,#1a1815 100%);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{
-  background:var(--panel); color:var(--grey-l);
-  font-family:'IBM Plex Mono',monospace; font-size:13px;
+  font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--grey-l);
   cursor:crosshair; user-select:none; overflow:hidden;
-  display:flex; flex-direction:column;
+  display:flex; flex-direction:column; position:relative;
+  background:#141210;
+}
+/* sfondo hex (Lain), molto debole */
+#sy-hex{
+  position:absolute; inset:0; z-index:0; color:rgba(212,245,160,.05);
+  font-family:'Share Tech Mono',monospace; font-size:11px; line-height:1.25;
+  letter-spacing:1px; white-space:pre-wrap; word-break:break-all; overflow:hidden; pointer-events:none;
 }
 
-/* Header */
-.sy-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:6px 12px; background:#0f0e0c; border-bottom:1px solid var(--grey-m);
+/* pannello metallico */
+.sy-rack{
+  position:relative; z-index:1; flex:1; min-height:0;
+  margin:8px; padding:12px; display:flex; flex-direction:column; gap:10px;
+  background:var(--metal);
+  border:2px solid #0a0a09;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 -3px 8px rgba(0,0,0,.5), 0 0 0 1px #000;
 }
-.sy-head h2{ font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:2px;
-  color:var(--ph); text-shadow:var(--glow-ph); font-weight:700; }
-.sy-note{ font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--am); text-shadow:var(--glow-am); }
+/* viti agli angoli */
+.screw{ position:absolute; width:12px; height:12px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #5a554d, #211e1b 70%);
+  box-shadow:inset 0 0 2px #000, 0 1px 0 rgba(255,255,255,.08); z-index:5; }
+.screw::before, .screw::after{ content:''; position:absolute; background:#0c0b0a; }
+.screw::before{ left:2px; right:2px; top:5px; height:2px; }
+.screw::after{ top:2px; bottom:2px; left:5px; width:2px; }
+.screw.tl{ top:4px; left:4px; } .screw.tr{ top:4px; right:4px; }
+.screw.bl{ bottom:4px; left:4px; } .screw.br{ bottom:4px; right:4px; }
 
-/* Pannello controlli */
-.sy-panel{
-  display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start;
-  padding:12px; background:#161512; border-bottom:1px solid var(--grey-m);
+/* targhetta */
+.sy-name{ display:flex; align-items:baseline; gap:10px; padding:0 8px; }
+.sy-name .b{ font-family:'Orbitron',sans-serif; font-weight:700; font-size:15px; letter-spacing:3px;
+  color:var(--ph); text-shadow:var(--glow-ph); }
+.sy-name .m{ font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--grey-m); letter-spacing:1px; }
+
+/* riga schermi: oscilloscopio + nixie */
+.sy-screens{ display:flex; gap:10px; }
+.scope{
+  flex:1; position:relative; padding:6px;
+  background:#070907; border:2px solid #000;
+  box-shadow:inset 0 0 12px rgba(0,0,0,.8);
 }
-.sy-group{ display:flex; flex-direction:column; gap:6px; }
-.sy-group .lbl{ font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--grey-m); }
-.sy-waves{ display:flex; gap:4px; }
-.sy-wave{
-  padding:4px 8px; cursor:crosshair; font-family:'Share Tech Mono',monospace; font-size:11px;
-  border:1px solid var(--grey-m); color:var(--grey-l); background:#0d0d0c;
+.scope::after{ content:''; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.25) 3px); }
+#sy-scope{ display:block; width:100%; height:84px; }
+
+/* display Nixie (nota corrente) */
+.nixie{
+  width:150px; flex-shrink:0; padding:6px 8px;
+  background:#0a0806; border:2px solid #000;
+  box-shadow:inset 0 0 10px rgba(0,0,0,.8);
+  display:flex; flex-direction:column; gap:5px;
 }
-.sy-wave.on{ background:var(--ph); color:var(--black); border-color:var(--ph); box-shadow:var(--glow-ph); }
-.sy-oct{ display:flex; gap:4px; align-items:center; }
-.sy-oct button{
-  width:22px; height:20px; cursor:crosshair; background:#0d0d0c; color:var(--am);
-  border:1px solid var(--grey-m); font-family:'Share Tech Mono',monospace;
+.nixie .lbl{ font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--grey-m); letter-spacing:2px; }
+.nixie .tubes{ display:flex; gap:3px; }
+.nixie .tube{
+  flex:1; text-align:center; padding:3px 0;
+  background:linear-gradient(#1a140a,#0d0a06); border:1px solid #2a2014;
+  font-family:'VT323',monospace; font-size:30px; line-height:1;
+  color:var(--am); text-shadow:var(--glow-am);
 }
-.sy-oct button:hover{ background:rgba(255,204,68,.15); }
-.sy-oct .val{ font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--ph); min-width:38px; text-align:center; }
+.nixie .oct{ display:flex; align-items:center; justify-content:space-between;
+  font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m); margin-top:2px; }
+.nixie .oct button{ width:20px; height:18px; cursor:crosshair; background:#1a1714; color:var(--am);
+  border:1px solid #000; box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
+.nixie .oct .ov{ color:var(--ph); text-shadow:var(--glow-ph); }
 
-.sy-knob{ display:flex; flex-direction:column; gap:3px; width:64px; }
-.sy-knob input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:6px;
-  background:#0d0d0c; border:1px solid var(--grey-m); cursor:crosshair; }
-.sy-knob input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:10px; height:14px;
-  background:var(--ph); box-shadow:var(--glow-ph); cursor:crosshair; }
-.sy-knob .v{ font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--am); text-align:right; }
+/* riga controlli: levette waveform + manopole */
+.sy-controls{ display:flex; gap:14px; align-items:stretch; padding:2px 4px; }
+.sy-sub{ display:flex; flex-direction:column; gap:6px; padding:8px 10px;
+  background:rgba(0,0,0,.18); border:1px solid #0a0a09; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+.sy-sub .cap{ font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px; color:var(--grey-m); text-align:center; }
 
-/* Tastiera pixel-art */
-.sy-kb-wrap{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
-  padding:16px; background:radial-gradient(ellipse at 50% 0%, rgba(212,245,160,.05), transparent 60%), #0d0d0c; }
-.sy-kb{ position:relative; height:150px; }
+/* interruttori a levetta */
+.switches{ display:flex; gap:8px; }
+.sw{ display:flex; flex-direction:column; align-items:center; gap:4px; cursor:crosshair; width:40px; }
+.sw .led{ width:7px; height:7px; border-radius:50%; background:#2a2a26; box-shadow:inset 0 0 2px #000; }
+.sw.on .led{ background:var(--ph); box-shadow:0 0 6px var(--ph); }
+.sw .track{ width:18px; height:30px; background:linear-gradient(#0c0b0a,#1a1714); border:1px solid #000;
+  border-radius:3px; position:relative; box-shadow:inset 0 0 3px #000; }
+.sw .lever{ position:absolute; left:2px; right:2px; height:13px; bottom:2px;
+  background:linear-gradient(#7a746a,#403c35); border:1px solid #000; border-radius:2px;
+  transition:bottom .08s; }
+.sw.on .lever{ bottom:15px; background:linear-gradient(#d4f5a0,#9bbf5e); }
+.sw .t{ font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--grey-l); letter-spacing:1px; }
+.sw.on .t{ color:var(--ph); text-shadow:var(--glow-ph); }
 
-/* tasto bianco */
-.wkey{
-  position:relative; float:left; width:36px; height:150px; margin:0;
-  background:linear-gradient(#e8e4dc, #cfc9c0 70%, #b9b3aa);
+/* manopole */
+.knobs{ flex:1; display:flex; gap:10px; justify-content:space-around; align-items:flex-start;
+  padding:8px 8px 4px; background:rgba(0,0,0,.18); border:1px solid #0a0a09;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+.knob{ display:flex; flex-direction:column; align-items:center; gap:4px; width:58px; }
+.knob .cap{ font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:1px; color:var(--grey-m); }
+.knob .dial{ width:42px; height:42px; border-radius:50%; position:relative; cursor:crosshair;
+  background:radial-gradient(circle at 38% 32%, #4a463f, #211e1b 72%);
+  border:2px solid #000; box-shadow:inset 0 2px 3px rgba(255,255,255,.08), inset 0 -3px 4px rgba(0,0,0,.6), 0 2px 3px rgba(0,0,0,.5); }
+.knob .dial .ind{ position:absolute; left:50%; top:5px; width:2px; height:13px; margin-left:-1px;
+  background:var(--am); box-shadow:0 0 4px var(--am); transform-origin:50% 16px; }
+.knob .val{ font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--am); text-shadow:var(--glow-am); }
+
+/* tastiera pixel-art */
+.sy-kb-wrap{ display:flex; align-items:center; justify-content:center; padding:6px 4px 2px; }
+.sy-kb{ position:relative; height:120px; }
+.wkey{ position:relative; float:left; width:34px; height:120px;
+  background:linear-gradient(#e8e4dc,#cfc9c0 70%,#b9b3aa);
   border:2px solid #0a0a09; border-top-width:3px;
-  box-shadow:inset 0 -8px 0 rgba(0,0,0,.18), inset 0 3px 0 rgba(255,255,255,.5);
+  box-shadow:inset 0 -7px 0 rgba(0,0,0,.18), inset 0 3px 0 rgba(255,255,255,.5);
   image-rendering:pixelated; cursor:crosshair;
-  display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px;
-}
+  display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px; }
 .wkey + .wkey{ border-left-width:1px; }
-.wkey .kl{ font-family:'VT323',monospace; font-size:15px; color:#5a554e; }
-.wkey.on{
-  background:linear-gradient(#d4f5a0, #aacf6e);
-  box-shadow:inset 0 -6px 0 rgba(0,0,0,.2), 0 0 12px rgba(212,245,160,.7);
-}
-
-/* tasto nero */
-.bkey{
-  position:absolute; top:0; width:22px; height:95px; z-index:3;
-  background:linear-gradient(#2a2824, #131210 80%);
+.wkey .kl{ font-family:'VT323',monospace; font-size:14px; color:#5a554e; }
+.wkey.on{ background:linear-gradient(#d4f5a0,#aacf6e); box-shadow:inset 0 -5px 0 rgba(0,0,0,.2), 0 0 12px rgba(212,245,160,.7); }
+.bkey{ position:absolute; top:0; width:20px; height:76px; z-index:3;
+  background:linear-gradient(#2a2824,#131210 80%);
   border:2px solid #000; border-bottom-width:5px;
   box-shadow:inset 0 3px 0 rgba(255,255,255,.08), 0 4px 0 rgba(0,0,0,.5);
-  image-rendering:pixelated; cursor:crosshair;
-  display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px;
-}
-.bkey .kl{ font-family:'VT323',monospace; font-size:13px; color:var(--am); }
-.bkey.on{
-  background:linear-gradient(#ffcc44, #b88a1f);
-  box-shadow:0 0 12px rgba(255,204,68,.7);
-}
+  image-rendering:pixelated; cursor:crosshair; }
+.bkey.on{ background:linear-gradient(#ffcc44,#b88a1f); box-shadow:0 0 12px rgba(255,204,68,.7); }
 
-.sy-foot{ padding:4px 12px; background:#0f0e0c; border-top:1px solid var(--grey-m);
+.sy-foot{ position:relative; z-index:1; padding:3px 14px; background:#0f0e0c; border-top:1px solid var(--grey-m);
   font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--grey-m); }
 .sy-foot b{ color:var(--grey-l); }
 </style>
 </head>
 <body>
 
-<div class="sy-head">
-  <h2>SYNTH</h2>
-  <div class="sy-note" id="sy-note">—</div>
-</div>
+<div id="sy-hex"></div>
 
-<div class="sy-panel">
-  <div class="sy-group">
-    <span class="lbl">WAVE</span>
-    <div class="sy-waves" id="sy-waves">
-      <div class="sy-wave on" data-w="sawtooth">SAW</div>
-      <div class="sy-wave" data-w="square">SQR</div>
-      <div class="sy-wave" data-w="triangle">TRI</div>
-      <div class="sy-wave" data-w="sine">SIN</div>
+<div class="sy-rack">
+  <span class="screw tl"></span><span class="screw tr"></span>
+  <span class="screw bl"></span><span class="screw br"></span>
+
+  <div class="sy-name"><span class="b">SYNTH-7</span><span class="m">// MONO OSC · ADSR · LP-FILTER · 0x4C5A</span></div>
+
+  <div class="sy-screens">
+    <div class="scope"><canvas id="sy-scope"></canvas></div>
+    <div class="nixie">
+      <span class="lbl">NOTE</span>
+      <div class="tubes"><div class="tube" id="nx0">–</div><div class="tube" id="nx1">–</div></div>
+      <div class="oct"><span>OCT</span>
+        <span><button id="oct-down">−</button> <span class="ov" id="oct-val">C4</span> <button id="oct-up">+</button></span>
+      </div>
     </div>
   </div>
-  <div class="sy-group">
-    <span class="lbl">OCTAVE</span>
-    <div class="sy-oct">
-      <button id="oct-down">−</button>
-      <span class="val" id="oct-val">C4</span>
-      <button id="oct-up">+</button>
+
+  <div class="sy-controls">
+    <div class="sy-sub">
+      <span class="cap">WAVE</span>
+      <div class="switches" id="sy-waves">
+        <div class="sw on" data-w="sawtooth"><span class="led"></span><span class="track"><span class="lever"></span></span><span class="t">SAW</span></div>
+        <div class="sw" data-w="square"><span class="led"></span><span class="track"><span class="lever"></span></span><span class="t">SQR</span></div>
+        <div class="sw" data-w="triangle"><span class="led"></span><span class="track"><span class="lever"></span></span><span class="t">TRI</span></div>
+        <div class="sw" data-w="sine"><span class="led"></span><span class="track"><span class="lever"></span></span><span class="t">SIN</span></div>
+      </div>
     </div>
+    <div class="knobs" id="sy-knobs"></div>
   </div>
-  <div class="sy-knob"><span class="lbl">ATTACK</span><input type="range" id="k-a" min="0" max="100" value="4"><span class="v" id="v-a"></span></div>
-  <div class="sy-knob"><span class="lbl">DECAY</span><input type="range" id="k-d" min="0" max="100" value="20"><span class="v" id="v-d"></span></div>
-  <div class="sy-knob"><span class="lbl">SUSTAIN</span><input type="range" id="k-s" min="0" max="100" value="60"><span class="v" id="v-s"></span></div>
-  <div class="sy-knob"><span class="lbl">RELEASE</span><input type="range" id="k-r" min="0" max="100" value="25"><span class="v" id="v-r"></span></div>
-  <div class="sy-knob"><span class="lbl">CUTOFF</span><input type="range" id="k-cut" min="0" max="100" value="80"><span class="v" id="v-cut"></span></div>
-  <div class="sy-knob"><span class="lbl">VOLUME</span><input type="range" id="k-vol" min="0" max="100" value="50"><span class="v" id="v-vol"></span></div>
+
+  <div class="sy-kb-wrap"><div class="sy-kb" id="sy-kb"></div></div>
 </div>
 
-<div class="sy-kb-wrap">
-  <div class="sy-kb" id="sy-kb"></div>
-</div>
-
-<div class="sy-foot">tastiera PC: <b>A W S E D F T G Y H U J K</b> · click/drag sui tasti · suona</div>
+<div class="sy-foot">tastiera PC: <b>A W S E D F T G Y H U J K</b> · click/drag sui tasti · trascina le manopole (doppio-click = reset)</div>
 
 <script>
 /* =========================================================
-   SYNTH — Web Audio + tastiera pixel-art
+   SYNTH — Web Audio + oscilloscopio + manopole + tastiera
    ========================================================= */
-const WW = 36, BW = 22, OCTAVES = 2;
-
-/* Tasti bianchi/neri di un'ottava (semitono + nome) */
+const WW = 34, BW = 20, OCTAVES = 2;
 const WHITE = [ {n:'C',s:0},{n:'D',s:2},{n:'E',s:4},{n:'F',s:5},{n:'G',s:7},{n:'A',s:9},{n:'B',s:11} ];
 const BLACK = [ {n:'C#',s:1,after:0},{n:'D#',s:3,after:1},{n:'F#',s:6,after:3},{n:'G#',s:8,after:4},{n:'A#',s:10,after:5} ];
-
-/* Mappa tasti del computer → semitono relativo alla tastiera */
 const KEYMAP = { a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15 };
+const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
 const kbEl = document.getElementById('sy-kb');
-const noteEl = document.getElementById('sy-note');
-
 let waveform = 'sawtooth';
-let octaveShift = 0;           // in ottave, base C4 (midi 60)
+let octaveShift = 0;
 let mouseDown = false;
-const voices = {};             // semiRel → {osc, gain}
+const voices = {};
 
-/* --- Web Audio (creato al primo gesto) --- */
-let actx = null, master = null, filter = null;
+/* --- Web Audio --- */
+let actx=null, master=null, filter=null, analyser=null, scopeData=null;
 function ensureAudio(){
   if(actx) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
-  filter = actx.createBiquadFilter(); filter.type = 'lowpass';
+  filter = actx.createBiquadFilter(); filter.type='lowpass';
   master = actx.createGain();
-  filter.connect(master); master.connect(actx.destination);
+  analyser = actx.createAnalyser(); analyser.fftSize = 1024;
+  scopeData = new Uint8Array(analyser.fftSize);
+  filter.connect(master); master.connect(analyser); analyser.connect(actx.destination);
   applyControls();
 }
-
-/* Letture controlli */
 const ctl = { a:0.04, d:0.2, s:0.6, r:0.25, cut:0.8, vol:0.5 };
 function applyControls(){
-  if(master) master.gain.value = ctl.vol * 0.5;
-  if(filter) filter.frequency.value = 120 + ctl.cut * ctl.cut * 11000; // 120Hz..~11kHz
+  if(master) master.gain.value = ctl.vol*0.5;
+  if(filter) filter.frequency.value = 120 + ctl.cut*ctl.cut*11000;
 }
 
-/* midi/freq dal semitono relativo */
-function freqOf(semiRel){
-  const midi = 60 + octaveShift*12 + semiRel;
-  return 440 * Math.pow(2, (midi - 69)/12);
-}
-const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-function nameOf(semiRel){
-  const midi = 60 + octaveShift*12 + semiRel;
-  return NAMES[((midi%12)+12)%12] + (Math.floor(midi/12) - 1);
-}
+function freqOf(semi){ const midi=60+octaveShift*12+semi; return 440*Math.pow(2,(midi-69)/12); }
+function nameOf(semi){ const midi=60+octaveShift*12+semi; return NAMES[((midi%12)+12)%12] + (Math.floor(midi/12)-1); }
 
-/* noteOn(semiRel): avvia una voce con inviluppo ADSR */
-function noteOn(semiRel){
+/* noteOn / noteOff con inviluppo ADSR */
+function noteOn(semi){
   ensureAudio();
-  if(actx.state === 'suspended') actx.resume();
-  if(voices[semiRel]) return;
-  const now = actx.currentTime;
-  const osc = actx.createOscillator();
-  osc.type = waveform;
-  osc.frequency.value = freqOf(semiRel);
-  const g = actx.createGain();
-  const peak = 0.9;
-  g.gain.setValueAtTime(0.0001, now);
-  g.gain.linearRampToValueAtTime(peak, now + ctl.a + 0.001);
-  g.gain.linearRampToValueAtTime(peak * ctl.s, now + ctl.a + ctl.d + 0.001);
-  osc.connect(g); g.connect(filter);
-  osc.start();
-  voices[semiRel] = { osc, g };
-  lightKey(semiRel, true);
-  noteEl.textContent = nameOf(semiRel);
+  if(actx.state==='suspended') actx.resume();
+  if(voices[semi]) return;
+  const now=actx.currentTime;
+  const osc=actx.createOscillator(); osc.type=waveform; osc.frequency.value=freqOf(semi);
+  const g=actx.createGain(); const peak=0.9;
+  g.gain.setValueAtTime(0.0001,now);
+  g.gain.linearRampToValueAtTime(peak,now+ctl.a+0.001);
+  g.gain.linearRampToValueAtTime(peak*ctl.s,now+ctl.a+ctl.d+0.001);
+  osc.connect(g); g.connect(filter); osc.start();
+  voices[semi]={osc,g};
+  lightKey(semi,true); showNote(nameOf(semi));
 }
-
-/* noteOff(semiRel): rilascio */
-function noteOff(semiRel){
-  const v = voices[semiRel];
-  if(!v) return;
-  const now = actx.currentTime;
+function noteOff(semi){
+  const v=voices[semi]; if(!v) return;
+  const now=actx.currentTime;
   v.g.gain.cancelScheduledValues(now);
-  v.g.gain.setValueAtTime(v.g.gain.value, now);
-  v.g.gain.linearRampToValueAtTime(0.0001, now + ctl.r + 0.01);
-  v.osc.stop(now + ctl.r + 0.05);
-  delete voices[semiRel];
-  lightKey(semiRel, false);
+  v.g.gain.setValueAtTime(v.g.gain.value,now);
+  v.g.gain.linearRampToValueAtTime(0.0001,now+ctl.r+0.01);
+  v.osc.stop(now+ctl.r+0.05);
+  delete voices[semi]; lightKey(semi,false);
+}
+function lightKey(semi,on){ const el=kbEl.querySelector(`[data-semi="${semi}"]`); if(el) el.classList.toggle('on',on); }
+
+/* display Nixie */
+function showNote(name){
+  document.getElementById('nx0').textContent = name[0] + (name[1]==='#'?'#':'');
+  document.getElementById('nx1').textContent = name.replace('#','').slice(1);
 }
 
-/* lightKey(): accende/spegne il tasto */
-function lightKey(semiRel, on){
-  const el = kbEl.querySelector(`[data-semi="${semiRel}"]`);
-  if(el) el.classList.toggle('on', on);
-}
-
-/* buildKeyboard(): genera i tasti pixel-art */
+/* tastiera pixel-art */
 function buildKeyboard(){
-  kbEl.innerHTML = '';
-  let whiteCount = 0;
-  for(let oct=0; oct<OCTAVES; oct++){
-    // bianchi
-    WHITE.forEach((w) => {
-      const semi = oct*12 + w.s;
-      const k = document.createElement('div');
-      k.className = 'wkey';
-      k.dataset.semi = semi;
-      k.innerHTML = `<span class="kl">${w.n==='C'?'C'+(4+oct+octaveShift):''}</span>`;
-      attachKey(k, semi);
-      kbEl.appendChild(k);
-      whiteCount++;
-    });
-    // neri (sopra, posizionati)
-    BLACK.forEach((b) => {
-      const semi = oct*12 + b.s;
-      const k = document.createElement('div');
-      k.className = 'bkey';
-      k.dataset.semi = semi;
-      k.style.left = ((oct*7 + b.after + 1) * WW - BW/2) + 'px';
-      attachKey(k, semi);
-      kbEl.appendChild(k);
-    });
+  kbEl.innerHTML=''; let wc=0;
+  for(let oct=0;oct<OCTAVES;oct++){
+    WHITE.forEach((w)=>{ const semi=oct*12+w.s; const k=document.createElement('div');
+      k.className='wkey'; k.dataset.semi=semi;
+      k.innerHTML=`<span class="kl">${w.n==='C'?'C'+(4+oct+octaveShift):''}</span>`;
+      attachKey(k,semi); kbEl.appendChild(k); wc++; });
+    BLACK.forEach((b)=>{ const semi=oct*12+b.s; const k=document.createElement('div');
+      k.className='bkey'; k.dataset.semi=semi;
+      k.style.left=((oct*7+b.after+1)*WW - BW/2)+'px';
+      attachKey(k,semi); kbEl.appendChild(k); });
   }
-  kbEl.style.width = (whiteCount * WW) + 'px';
+  kbEl.style.width=(wc*WW)+'px';
 }
-
-/* attachKey(): eventi pointer per suonare (click + drag glissando) */
-function attachKey(el, semi){
-  el.addEventListener('pointerdown', (e) => { e.preventDefault(); mouseDown = true; noteOn(semi); });
-  el.addEventListener('pointerenter', () => { if(mouseDown) noteOn(semi); });
-  el.addEventListener('pointerup', () => noteOff(semi));
-  el.addEventListener('pointerleave', () => { if(mouseDown) noteOff(semi); });
+function attachKey(el,semi){
+  el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); mouseDown=true; noteOn(semi); });
+  el.addEventListener('pointerenter',()=>{ if(mouseDown) noteOn(semi); });
+  el.addEventListener('pointerup',()=>noteOff(semi));
+  el.addEventListener('pointerleave',()=>{ if(mouseDown) noteOff(semi); });
 }
-window.addEventListener('pointerup', () => { mouseDown = false; });
+window.addEventListener('pointerup',()=>{ mouseDown=false; });
 
-/* --- Controlli UI --- */
-document.getElementById('sy-waves').addEventListener('click', (e) => {
-  const b = e.target.closest('.sy-wave'); if(!b) return;
-  document.querySelectorAll('.sy-wave').forEach(x => x.classList.remove('on'));
-  b.classList.add('on');
-  waveform = b.dataset.w;
-  Object.values(voices).forEach(v => v.osc.type = waveform);
+/* levette waveform */
+document.getElementById('sy-waves').addEventListener('click',(e)=>{
+  const b=e.target.closest('.sw'); if(!b) return;
+  document.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); waveform=b.dataset.w;
+  Object.values(voices).forEach(v=>v.osc.type=waveform);
 });
 
-function setOct(d){
-  octaveShift = Math.max(-3, Math.min(3, octaveShift + d));
-  document.getElementById('oct-val').textContent = 'C' + (4 + octaveShift);
-  buildKeyboard();
-}
-document.getElementById('oct-up').onclick = () => setOct(1);
-document.getElementById('oct-down').onclick = () => setOct(-1);
+/* ottava */
+function setOct(d){ octaveShift=Math.max(-3,Math.min(3,octaveShift+d));
+  document.getElementById('oct-val').textContent='C'+(4+octaveShift); buildKeyboard(); }
+document.getElementById('oct-up').onclick=()=>setOct(1);
+document.getElementById('oct-down').onclick=()=>setOct(-1);
 
-/* slider ADSR/filtro/volume */
-const sliders = [
-  ['k-a','v-a', v => { ctl.a = v/100*1.2; return ctl.a.toFixed(2)+'s'; }],
-  ['k-d','v-d', v => { ctl.d = v/100*1.2; return ctl.d.toFixed(2)+'s'; }],
-  ['k-s','v-s', v => { ctl.s = v/100; return Math.round(v)+'%'; }],
-  ['k-r','v-r', v => { ctl.r = v/100*1.5; return ctl.r.toFixed(2)+'s'; }],
-  ['k-cut','v-cut', v => { ctl.cut = v/100; applyControls(); return Math.round(filter? filter.frequency.value:0)+'Hz'; }],
-  ['k-vol','v-vol', v => { ctl.vol = v/100; applyControls(); return Math.round(v)+'%'; }],
+/* --- MANOPOLE rotanti (drag verticale + wheel + dblclick reset) --- */
+const KNOBS = [
+  { key:'A',  def:4,  fmt:v=>{ctl.a=v/100*1.2; return ctl.a.toFixed(2)+'s';} },
+  { key:'D',  def:20, fmt:v=>{ctl.d=v/100*1.2; return ctl.d.toFixed(2)+'s';} },
+  { key:'S',  def:60, fmt:v=>{ctl.s=v/100; return Math.round(v)+'%';} },
+  { key:'R',  def:25, fmt:v=>{ctl.r=v/100*1.5; return ctl.r.toFixed(2)+'s';} },
+  { key:'CUT',def:80, fmt:v=>{ctl.cut=v/100; applyControls(); return (filter?Math.round(filter.frequency.value):0)+'Hz';} },
+  { key:'VOL',def:50, fmt:v=>{ctl.vol=v/100; applyControls(); return Math.round(v)+'%';} },
 ];
-sliders.forEach(([id,vid,fn]) => {
-  const inp = document.getElementById(id), out = document.getElementById(vid);
-  const upd = () => { out.textContent = fn(+inp.value); };
-  inp.addEventListener('input', () => { ensureAudio(); upd(); });
-  upd();
-});
+function makeKnob(cfg){
+  const wrap=document.createElement('div'); wrap.className='knob';
+  wrap.innerHTML=`<span class="cap">${cfg.key}</span><span class="dial"></span><span class="val"></span>`;
+  const dial=wrap.querySelector('.dial'), val=wrap.querySelector('.val');
+  let v=cfg.def;
+  function render(){
+    const ang = -135 + (v/100)*270;
+    dialIndicator(dial, ang);
+    val.textContent = cfg.fmt(v);
+  }
+  function set(nv){ v=Math.max(0,Math.min(100,nv)); render(); }
+  // drag verticale
+  let sy=0, sv=0, drag=false;
+  dial.addEventListener('pointerdown',(e)=>{ ensureAudio(); drag=true; sy=e.clientY; sv=v; dial.setPointerCapture(e.pointerId); e.preventDefault(); });
+  dial.addEventListener('pointermove',(e)=>{ if(!drag) return; set(sv + (sy-e.clientY)*0.6); });
+  dial.addEventListener('pointerup',()=>{ drag=false; });
+  dial.addEventListener('wheel',(e)=>{ ensureAudio(); e.preventDefault(); set(v - Math.sign(e.deltaY)*3); },{passive:false});
+  dial.addEventListener('dblclick',()=>{ ensureAudio(); set(cfg.def); });
+  render();
+  return wrap;
+}
+/* dialIndicator: ruota la lancetta della manopola */
+function dialIndicator(dial,ang){
+  // usa una pseudo via inline style su un figlio dedicato
+  let line=dial.querySelector('.ind');
+  if(!line){ line=document.createElement('span'); line.className='ind'; dial.appendChild(line); }
+  line.style.transform=`rotate(${ang}deg)`;
+}
+const knobsEl=document.getElementById('sy-knobs');
+KNOBS.forEach(c=>knobsEl.appendChild(makeKnob(c)));
 
-/* --- Tastiera del computer --- */
-const held = new Set();
-window.addEventListener('keydown', (e) => {
-  const k = e.key.toLowerCase();
-  if(!(k in KEYMAP) || held.has(k)) return;
-  held.add(k); noteOn(KEYMAP[k]);
-});
-window.addEventListener('keyup', (e) => {
-  const k = e.key.toLowerCase();
-  if(!(k in KEYMAP)) return;
-  held.delete(k); noteOff(KEYMAP[k]);
-});
+/* tastiera del computer */
+const held=new Set();
+window.addEventListener('keydown',(e)=>{ const k=e.key.toLowerCase();
+  if(!(k in KEYMAP)||held.has(k)) return; held.add(k); noteOn(KEYMAP[k]); });
+window.addEventListener('keyup',(e)=>{ const k=e.key.toLowerCase();
+  if(!(k in KEYMAP)) return; held.delete(k); noteOff(KEYMAP[k]); });
+
+/* --- OSCILLOSCOPIO --- */
+const scope=document.getElementById('sy-scope');
+const sctx=scope.getContext('2d');
+function sizeScope(){ scope.width=scope.clientWidth; scope.height=scope.clientHeight; }
+new ResizeObserver(sizeScope).observe(scope); sizeScope();
+function drawScope(){
+  const W=scope.width, H=scope.height;
+  sctx.clearRect(0,0,W,H);
+  // griglia
+  sctx.strokeStyle='rgba(212,245,160,.10)';
+  sctx.beginPath(); sctx.moveTo(0,H/2); sctx.lineTo(W,H/2); sctx.stroke();
+  if(analyser){
+    analyser.getByteTimeDomainData(scopeData);
+    sctx.strokeStyle='#d4f5a0'; sctx.lineWidth=2; sctx.shadowColor='#d4f5a0'; sctx.shadowBlur=6;
+    sctx.beginPath();
+    const step=W/scopeData.length;
+    for(let i=0;i<scopeData.length;i++){
+      const y=(scopeData[i]/255)*H;
+      i?sctx.lineTo(i*step,y):sctx.moveTo(0,y);
+    }
+    sctx.stroke(); sctx.shadowBlur=0;
+  } else {
+    sctx.strokeStyle='rgba(212,245,160,.5)'; sctx.beginPath(); sctx.moveTo(0,H/2); sctx.lineTo(W,H/2); sctx.stroke();
+  }
+  requestAnimationFrame(drawScope);
+}
+
+/* sfondo hex (Lain) */
+(function hex(){
+  const chars='0123456789ABCDEF'; let out='';
+  for(let i=0;i<2200;i++){ out+=chars[(Math.random()*16)|0]; if((i+1)%2===0)out+=' '; if((i+1)%56===0)out+='\n'; }
+  document.getElementById('sy-hex').textContent=out;
+})();
 
 // Avvio
 buildKeyboard();
+requestAnimationFrame(drawScope);
 </script>
 </body>
 </html>
