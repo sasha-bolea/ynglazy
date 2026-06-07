@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYNTH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   SYNTH — app standalone (iframe). Tastiera pixel-art + Web Audio.
+   ========================================================= */
+:root{
+  --white:#f0ede8; --offwhite:#e2ddd6; --grey-l:#c8c3bc;
+  --grey-m:#8a857e; --grey-d:#3a3732; --black:#111010;
+  --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --glow-ph:0 0 4px rgba(212,245,160,.55);
+  --glow-am:0 0 4px rgba(255,204,68,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--panel); color:var(--grey-l);
+  font-family:'IBM Plex Mono',monospace; font-size:13px;
+  cursor:crosshair; user-select:none; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* Header */
+.sy-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 12px; background:#0f0e0c; border-bottom:1px solid var(--grey-m);
+}
+.sy-head h2{ font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:2px;
+  color:var(--ph); text-shadow:var(--glow-ph); font-weight:700; }
+.sy-note{ font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--am); text-shadow:var(--glow-am); }
+
+/* Pannello controlli */
+.sy-panel{
+  display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start;
+  padding:12px; background:#161512; border-bottom:1px solid var(--grey-m);
+}
+.sy-group{ display:flex; flex-direction:column; gap:6px; }
+.sy-group .lbl{ font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--grey-m); }
+.sy-waves{ display:flex; gap:4px; }
+.sy-wave{
+  padding:4px 8px; cursor:crosshair; font-family:'Share Tech Mono',monospace; font-size:11px;
+  border:1px solid var(--grey-m); color:var(--grey-l); background:#0d0d0c;
+}
+.sy-wave.on{ background:var(--ph); color:var(--black); border-color:var(--ph); box-shadow:var(--glow-ph); }
+.sy-oct{ display:flex; gap:4px; align-items:center; }
+.sy-oct button{
+  width:22px; height:20px; cursor:crosshair; background:#0d0d0c; color:var(--am);
+  border:1px solid var(--grey-m); font-family:'Share Tech Mono',monospace;
+}
+.sy-oct button:hover{ background:rgba(255,204,68,.15); }
+.sy-oct .val{ font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--ph); min-width:38px; text-align:center; }
+
+.sy-knob{ display:flex; flex-direction:column; gap:3px; width:64px; }
+.sy-knob input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:6px;
+  background:#0d0d0c; border:1px solid var(--grey-m); cursor:crosshair; }
+.sy-knob input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:10px; height:14px;
+  background:var(--ph); box-shadow:var(--glow-ph); cursor:crosshair; }
+.sy-knob .v{ font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--am); text-align:right; }
+
+/* Tastiera pixel-art */
+.sy-kb-wrap{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+  padding:16px; background:radial-gradient(ellipse at 50% 0%, rgba(212,245,160,.05), transparent 60%), #0d0d0c; }
+.sy-kb{ position:relative; height:150px; }
+
+/* tasto bianco */
+.wkey{
+  position:relative; float:left; width:36px; height:150px; margin:0;
+  background:linear-gradient(#e8e4dc, #cfc9c0 70%, #b9b3aa);
+  border:2px solid #0a0a09; border-top-width:3px;
+  box-shadow:inset 0 -8px 0 rgba(0,0,0,.18), inset 0 3px 0 rgba(255,255,255,.5);
+  image-rendering:pixelated; cursor:crosshair;
+  display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px;
+}
+.wkey + .wkey{ border-left-width:1px; }
+.wkey .kl{ font-family:'VT323',monospace; font-size:15px; color:#5a554e; }
+.wkey.on{
+  background:linear-gradient(#d4f5a0, #aacf6e);
+  box-shadow:inset 0 -6px 0 rgba(0,0,0,.2), 0 0 12px rgba(212,245,160,.7);
+}
+
+/* tasto nero */
+.bkey{
+  position:absolute; top:0; width:22px; height:95px; z-index:3;
+  background:linear-gradient(#2a2824, #131210 80%);
+  border:2px solid #000; border-bottom-width:5px;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.08), 0 4px 0 rgba(0,0,0,.5);
+  image-rendering:pixelated; cursor:crosshair;
+  display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px;
+}
+.bkey .kl{ font-family:'VT323',monospace; font-size:13px; color:var(--am); }
+.bkey.on{
+  background:linear-gradient(#ffcc44, #b88a1f);
+  box-shadow:0 0 12px rgba(255,204,68,.7);
+}
+
+.sy-foot{ padding:4px 12px; background:#0f0e0c; border-top:1px solid var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--grey-m); }
+.sy-foot b{ color:var(--grey-l); }
+</style>
+</head>
+<body>
+
+<div class="sy-head">
+  <h2>SYNTH</h2>
+  <div class="sy-note" id="sy-note">—</div>
+</div>
+
+<div class="sy-panel">
+  <div class="sy-group">
+    <span class="lbl">WAVE</span>
+    <div class="sy-waves" id="sy-waves">
+      <div class="sy-wave on" data-w="sawtooth">SAW</div>
+      <div class="sy-wave" data-w="square">SQR</div>
+      <div class="sy-wave" data-w="triangle">TRI</div>
+      <div class="sy-wave" data-w="sine">SIN</div>
+    </div>
+  </div>
+  <div class="sy-group">
+    <span class="lbl">OCTAVE</span>
+    <div class="sy-oct">
+      <button id="oct-down">−</button>
+      <span class="val" id="oct-val">C4</span>
+      <button id="oct-up">+</button>
+    </div>
+  </div>
+  <div class="sy-knob"><span class="lbl">ATTACK</span><input type="range" id="k-a" min="0" max="100" value="4"><span class="v" id="v-a"></span></div>
+  <div class="sy-knob"><span class="lbl">DECAY</span><input type="range" id="k-d" min="0" max="100" value="20"><span class="v" id="v-d"></span></div>
+  <div class="sy-knob"><span class="lbl">SUSTAIN</span><input type="range" id="k-s" min="0" max="100" value="60"><span class="v" id="v-s"></span></div>
+  <div class="sy-knob"><span class="lbl">RELEASE</span><input type="range" id="k-r" min="0" max="100" value="25"><span class="v" id="v-r"></span></div>
+  <div class="sy-knob"><span class="lbl">CUTOFF</span><input type="range" id="k-cut" min="0" max="100" value="80"><span class="v" id="v-cut"></span></div>
+  <div class="sy-knob"><span class="lbl">VOLUME</span><input type="range" id="k-vol" min="0" max="100" value="50"><span class="v" id="v-vol"></span></div>
+</div>
+
+<div class="sy-kb-wrap">
+  <div class="sy-kb" id="sy-kb"></div>
+</div>
+
+<div class="sy-foot">tastiera PC: <b>A W S E D F T G Y H U J K</b> · click/drag sui tasti · suona</div>
+
+<script>
+/* =========================================================
+   SYNTH — Web Audio + tastiera pixel-art
+   ========================================================= */
+const WW = 36, BW = 22, OCTAVES = 2;
+
+/* Tasti bianchi/neri di un'ottava (semitono + nome) */
+const WHITE = [ {n:'C',s:0},{n:'D',s:2},{n:'E',s:4},{n:'F',s:5},{n:'G',s:7},{n:'A',s:9},{n:'B',s:11} ];
+const BLACK = [ {n:'C#',s:1,after:0},{n:'D#',s:3,after:1},{n:'F#',s:6,after:3},{n:'G#',s:8,after:4},{n:'A#',s:10,after:5} ];
+
+/* Mappa tasti del computer → semitono relativo alla tastiera */
+const KEYMAP = { a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15 };
+
+const kbEl = document.getElementById('sy-kb');
+const noteEl = document.getElementById('sy-note');
+
+let waveform = 'sawtooth';
+let octaveShift = 0;           // in ottave, base C4 (midi 60)
+let mouseDown = false;
+const voices = {};             // semiRel → {osc, gain}
+
+/* --- Web Audio (creato al primo gesto) --- */
+let actx = null, master = null, filter = null;
+function ensureAudio(){
+  if(actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  filter = actx.createBiquadFilter(); filter.type = 'lowpass';
+  master = actx.createGain();
+  filter.connect(master); master.connect(actx.destination);
+  applyControls();
+}
+
+/* Letture controlli */
+const ctl = { a:0.04, d:0.2, s:0.6, r:0.25, cut:0.8, vol:0.5 };
+function applyControls(){
+  if(master) master.gain.value = ctl.vol * 0.5;
+  if(filter) filter.frequency.value = 120 + ctl.cut * ctl.cut * 11000; // 120Hz..~11kHz
+}
+
+/* midi/freq dal semitono relativo */
+function freqOf(semiRel){
+  const midi = 60 + octaveShift*12 + semiRel;
+  return 440 * Math.pow(2, (midi - 69)/12);
+}
+const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function nameOf(semiRel){
+  const midi = 60 + octaveShift*12 + semiRel;
+  return NAMES[((midi%12)+12)%12] + (Math.floor(midi/12) - 1);
+}
+
+/* noteOn(semiRel): avvia una voce con inviluppo ADSR */
+function noteOn(semiRel){
+  ensureAudio();
+  if(actx.state === 'suspended') actx.resume();
+  if(voices[semiRel]) return;
+  const now = actx.currentTime;
+  const osc = actx.createOscillator();
+  osc.type = waveform;
+  osc.frequency.value = freqOf(semiRel);
+  const g = actx.createGain();
+  const peak = 0.9;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(peak, now + ctl.a + 0.001);
+  g.gain.linearRampToValueAtTime(peak * ctl.s, now + ctl.a + ctl.d + 0.001);
+  osc.connect(g); g.connect(filter);
+  osc.start();
+  voices[semiRel] = { osc, g };
+  lightKey(semiRel, true);
+  noteEl.textContent = nameOf(semiRel);
+}
+
+/* noteOff(semiRel): rilascio */
+function noteOff(semiRel){
+  const v = voices[semiRel];
+  if(!v) return;
+  const now = actx.currentTime;
+  v.g.gain.cancelScheduledValues(now);
+  v.g.gain.setValueAtTime(v.g.gain.value, now);
+  v.g.gain.linearRampToValueAtTime(0.0001, now + ctl.r + 0.01);
+  v.osc.stop(now + ctl.r + 0.05);
+  delete voices[semiRel];
+  lightKey(semiRel, false);
+}
+
+/* lightKey(): accende/spegne il tasto */
+function lightKey(semiRel, on){
+  const el = kbEl.querySelector(`[data-semi="${semiRel}"]`);
+  if(el) el.classList.toggle('on', on);
+}
+
+/* buildKeyboard(): genera i tasti pixel-art */
+function buildKeyboard(){
+  kbEl.innerHTML = '';
+  let whiteCount = 0;
+  for(let oct=0; oct<OCTAVES; oct++){
+    // bianchi
+    WHITE.forEach((w) => {
+      const semi = oct*12 + w.s;
+      const k = document.createElement('div');
+      k.className = 'wkey';
+      k.dataset.semi = semi;
+      k.innerHTML = `<span class="kl">${w.n==='C'?'C'+(4+oct+octaveShift):''}</span>`;
+      attachKey(k, semi);
+      kbEl.appendChild(k);
+      whiteCount++;
+    });
+    // neri (sopra, posizionati)
+    BLACK.forEach((b) => {
+      const semi = oct*12 + b.s;
+      const k = document.createElement('div');
+      k.className = 'bkey';
+      k.dataset.semi = semi;
+      k.style.left = ((oct*7 + b.after + 1) * WW - BW/2) + 'px';
+      attachKey(k, semi);
+      kbEl.appendChild(k);
+    });
+  }
+  kbEl.style.width = (whiteCount * WW) + 'px';
+}
+
+/* attachKey(): eventi pointer per suonare (click + drag glissando) */
+function attachKey(el, semi){
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); mouseDown = true; noteOn(semi); });
+  el.addEventListener('pointerenter', () => { if(mouseDown) noteOn(semi); });
+  el.addEventListener('pointerup', () => noteOff(semi));
+  el.addEventListener('pointerleave', () => { if(mouseDown) noteOff(semi); });
+}
+window.addEventListener('pointerup', () => { mouseDown = false; });
+
+/* --- Controlli UI --- */
+document.getElementById('sy-waves').addEventListener('click', (e) => {
+  const b = e.target.closest('.sy-wave'); if(!b) return;
+  document.querySelectorAll('.sy-wave').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  waveform = b.dataset.w;
+  Object.values(voices).forEach(v => v.osc.type = waveform);
+});
+
+function setOct(d){
+  octaveShift = Math.max(-3, Math.min(3, octaveShift + d));
+  document.getElementById('oct-val').textContent = 'C' + (4 + octaveShift);
+  buildKeyboard();
+}
+document.getElementById('oct-up').onclick = () => setOct(1);
+document.getElementById('oct-down').onclick = () => setOct(-1);
+
+/* slider ADSR/filtro/volume */
+const sliders = [
+  ['k-a','v-a', v => { ctl.a = v/100*1.2; return ctl.a.toFixed(2)+'s'; }],
+  ['k-d','v-d', v => { ctl.d = v/100*1.2; return ctl.d.toFixed(2)+'s'; }],
+  ['k-s','v-s', v => { ctl.s = v/100; return Math.round(v)+'%'; }],
+  ['k-r','v-r', v => { ctl.r = v/100*1.5; return ctl.r.toFixed(2)+'s'; }],
+  ['k-cut','v-cut', v => { ctl.cut = v/100; applyControls(); return Math.round(filter? filter.frequency.value:0)+'Hz'; }],
+  ['k-vol','v-vol', v => { ctl.vol = v/100; applyControls(); return Math.round(v)+'%'; }],
+];
+sliders.forEach(([id,vid,fn]) => {
+  const inp = document.getElementById(id), out = document.getElementById(vid);
+  const upd = () => { out.textContent = fn(+inp.value); };
+  inp.addEventListener('input', () => { ensureAudio(); upd(); });
+  upd();
+});
+
+/* --- Tastiera del computer --- */
+const held = new Set();
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if(!(k in KEYMAP) || held.has(k)) return;
+  held.add(k); noteOn(KEYMAP[k]);
+});
+window.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if(!(k in KEYMAP)) return;
+  held.delete(k); noteOff(KEYMAP[k]);
+});
+
+// Avvio
+buildKeyboard();
+</script>
+</body>
+</html>

@@ -141,6 +141,34 @@
 }
 .tb-start:hover { background: rgba(212, 245, 160, 0.12); }
 
+/* Launcher app nella taskbar (tutte tranne il Cestino) */
+#tb-launch {
+  display: flex;
+  align-items: stretch;
+  border-right: 1px solid var(--grey-m);
+}
+
+.tb-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 12px;
+  cursor: crosshair;
+  border-right: 1px solid rgba(138, 133, 126, 0.3);
+  color: var(--grey-l);
+  white-space: nowrap;
+}
+.tb-app:hover {
+  background: rgba(212, 245, 160, 0.12);
+  color: var(--ph);
+  text-shadow: var(--glow-ph);
+}
+.tb-app:active { background: rgba(255, 204, 68, 0.18); }
+.tb-app .g { font-size: 20px; line-height: 1; filter: grayscale(0.2); }
+.tb-app .t { font-size: 10px; letter-spacing: 0.5px; line-height: 1; }
+
 /* Area finestre aperte (popolata da windows.js più avanti) */
 #tb-tasks {
   flex: 1;
@@ -209,6 +237,84 @@
   color: var(--grey-d);
   line-height: 1.5;
 }
+
+/* =========================================================
+   Easter egg: popup antivirus + virus "ASCOLTA LAZYYY"
+   ========================================================= */
+
+/* Popup antivirus (toast in basso a destra) */
+.av-popup {
+  position: fixed;
+  right: 14px;
+  bottom: calc(var(--taskbar-h) + 14px);
+  width: 300px;
+  z-index: 7500;
+  background: var(--offwhite);
+  border: 1px solid var(--grey-d);
+  box-shadow: 4px 4px 0 rgba(17, 16, 16, 0.4);
+  font-family: var(--f-body);
+  animation: av-in 0.3s ease;
+}
+@keyframes av-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+.av-head {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #b32d2d; color: #fff;
+  padding: 5px 8px;
+  font-family: var(--f-micro); font-size: 12px; letter-spacing: 0.5px;
+}
+.av-head .x { cursor: crosshair; padding: 0 4px; }
+.av-body { padding: 12px; font-size: 12px; color: var(--grey-d); line-height: 1.5; }
+.av-body b { color: #b32d2d; }
+.av-scan { height: 10px; border: 1px solid var(--grey-m); margin: 10px 0 6px; background: #0c0c0c; }
+.av-scan > i { display: block; height: 100%; width: 0; background: var(--ph); box-shadow: var(--glow-ph); }
+.av-actions { display: flex; gap: 8px; margin-top: 10px; }
+.av-btn {
+  flex: 1; text-align: center; padding: 6px; cursor: crosshair;
+  font-family: var(--f-micro); font-size: 12px; border: 1px solid var(--grey-d);
+}
+.av-btn.primary { background: var(--ph); color: var(--black); border-color: var(--ph); }
+.av-btn.primary:hover { background: var(--am); border-color: var(--am); }
+.av-btn.ghost:hover { background: var(--grey-l); }
+
+/* Finestre virus che si moltiplicano */
+.virus-win {
+  position: fixed; z-index: 7000; width: 200px;
+  background: var(--panel); border: 1px solid var(--ph);
+  box-shadow: 0 0 12px rgba(212, 245, 160, 0.5);
+  font-family: var(--f-micro);
+  animation: virus-jit 0.2s steps(2) infinite;
+}
+@keyframes virus-jit {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(-1px, 1px); }
+  100% { transform: translate(1px, -1px); }
+}
+.virus-win .vw-head {
+  display: flex; justify-content: space-between;
+  background: var(--ph); color: var(--black);
+  padding: 3px 6px; font-size: 11px;
+}
+.virus-win .vw-head .x { cursor: crosshair; padding: 0 3px; }
+.virus-win .vw-body { padding: 14px 10px; text-align: center; }
+.virus-win .vw-body .big {
+  font-family: var(--f-display); font-size: 28px; line-height: 1;
+  color: var(--ph); text-shadow: var(--glow-ph);
+}
+.virus-win .vw-body a { display: inline-block; margin-top: 8px; color: var(--am); font-size: 11px; text-decoration: none; }
+.virus-win .vw-body a:hover { text-decoration: underline; }
+
+/* Pulsante per terminare l'infestazione */
+.virus-purge {
+  position: fixed; left: 50%; bottom: calc(var(--taskbar-h) + 14px);
+  transform: translateX(-50%);
+  z-index: 7600; padding: 8px 16px; cursor: crosshair;
+  background: #b32d2d; color: #fff; border: 1px solid #fff;
+  font-family: var(--f-micro); font-size: 12px; letter-spacing: 0.5px;
+}
+.virus-purge:hover { background: #d13838; }
 
 /* Corpo che ospita un'app standalone in iframe: niente padding */
 .win-body.win-app {

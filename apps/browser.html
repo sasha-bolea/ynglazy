@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BROWSER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   BROWSER — finto browser retro (iframe app).
+   All'avvio una scheda già aperta: pagina PRE-SAVE di lazyyy.
+   ========================================================= */
+:root{
+  --white:#f0ede8; --offwhite:#e2ddd6; --grey-l:#c8c3bc;
+  --grey-m:#8a857e; --grey-d:#3a3732; --black:#111010;
+  --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --glow-ph:0 0 4px rgba(212,245,160,.55);
+  --glow-am:0 0 4px rgba(255,204,68,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--panel); color:var(--grey-l);
+  font-family:'IBM Plex Mono',monospace; font-size:13px;
+  cursor:crosshair; user-select:none; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* Barra schede */
+.bw-tabs{
+  display:flex; align-items:stretch; height:26px;
+  background:#0f0e0c; border-bottom:1px solid var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:11px;
+}
+.bw-tab{
+  display:flex; align-items:center; gap:6px;
+  padding:0 12px; max-width:200px;
+  border-right:1px solid var(--grey-m);
+  color:var(--grey-l); cursor:crosshair; white-space:nowrap;
+}
+.bw-tab.active{ background:var(--panel); color:var(--ph); text-shadow:var(--glow-ph); }
+.bw-tab .x{ color:var(--grey-m); }
+.bw-tab .x:hover{ color:#ff6b5e; }
+.bw-newtab{ padding:0 12px; display:flex; align-items:center; color:var(--grey-m); cursor:crosshair; }
+.bw-newtab:hover{ color:var(--am); }
+
+/* Barra indirizzo */
+.bw-nav{
+  display:flex; align-items:center; gap:8px;
+  height:30px; padding:0 8px;
+  background:#161512; border-bottom:1px solid var(--grey-m);
+}
+.bw-btn{ color:var(--grey-m); padding:0 4px; cursor:crosshair; font-size:13px; }
+.bw-btn:hover{ color:var(--am); }
+.bw-url{
+  flex:1; height:20px; display:flex; align-items:center;
+  padding:0 10px; background:#0c0c0c;
+  border:1px solid var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  color:var(--ph); text-shadow:var(--glow-ph);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.bw-url .lock{ color:var(--am); margin-right:6px; }
+
+/* Area pagina (ospita l'iframe del presave reale) */
+.bw-page{ flex:1; min-height:0; display:flex; flex-direction:column; position:relative; }
+.bw-fallback{
+  flex-shrink:0; padding:4px 10px;
+  background:#0f0e0c; border-bottom:1px solid var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m);
+}
+.bw-fallback a{ color:var(--am); text-shadow:var(--glow-am); text-decoration:none; }
+.bw-fallback a:hover{ text-decoration:underline; }
+.bw-embed{ flex:1; width:100%; border:0; background:#fff; }
+
+/* ---- Gioco dino (scheda OFFLINE) ---- */
+.dino-wrap{
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px;
+  padding:20px; background:#0d0d0c;
+}
+.dino-head{ text-align:center; }
+.dino-head .t{
+  font-family:'VT323',monospace; font-size:42px; letter-spacing:2px;
+  color:var(--am); text-shadow:var(--glow-am); line-height:1;
+}
+.dino-head .s{
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  color:var(--grey-m); margin-top:4px;
+}
+.dino-cv{
+  width:min(640px,94%); height:180px; display:block;
+  image-rendering:pixelated; cursor:crosshair;
+  border:1px solid var(--grey-m); background:#0d0d0c;
+}
+.dino-bar{
+  width:min(640px,94%); display:flex; justify-content:space-between; align-items:center;
+  font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m);
+}
+.dino-bar .hi{ color:var(--am); text-shadow:var(--glow-am); }
+
+/* ---- Landing PRE-SAVE ---- */
+.ps{
+  min-height:100%; padding:42px 28px;
+  display:flex; flex-direction:column; align-items:center;
+  text-align:center;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(212,245,160,.08), transparent 60%),
+    #0d0d0c;
+}
+.ps .kick{
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  letter-spacing:3px; color:var(--am); text-shadow:var(--glow-am);
+  margin-bottom:14px;
+}
+.ps h1{
+  font-family:'VT323',monospace; font-size:64px; line-height:.95;
+  color:var(--ph); text-shadow:var(--glow-ph); letter-spacing:2px;
+  margin-bottom:8px; word-break:break-word;
+}
+.ps .meta{
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  color:var(--grey-m); margin-bottom:30px;
+}
+.ps .cover{
+  width:160px; height:160px; margin-bottom:26px;
+  border:1px solid var(--grey-m);
+  background:
+    repeating-linear-gradient(45deg, #1a1a18 0 6px, #121211 6px 12px);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'VT323',monospace; font-size:34px; color:var(--grey-m);
+  box-shadow:0 0 18px rgba(212,245,160,.15);
+}
+.ps .links{ display:flex; flex-direction:column; gap:10px; width:min(320px,90%); }
+.ps a.cta{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; text-decoration:none;
+  font-family:'Share Tech Mono',monospace; font-size:14px; letter-spacing:1px;
+  color:var(--black); background:var(--ph);
+  border:1px solid var(--ph); box-shadow:0 0 10px rgba(212,245,160,.4);
+  cursor:crosshair; transition:transform .08s;
+}
+.ps a.cta:hover{ transform:translateX(3px); background:var(--am); border-color:var(--am); }
+.ps a.cta.ghost{
+  color:var(--ph); background:transparent; box-shadow:none;
+  border:1px solid var(--grey-m);
+}
+.ps a.cta.ghost:hover{ color:var(--am); border-color:var(--am); background:transparent; transform:translateX(3px); }
+.ps .note{
+  margin-top:24px; font-family:'IBM Plex Mono',monospace;
+  font-size:11px; color:var(--grey-m); max-width:340px; line-height:1.5;
+}
+.ps .warn{ color:var(--am); }
+
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-track{ background:var(--panel); }
+::-webkit-scrollbar-thumb{ background:var(--grey-m); border:1px solid var(--black); }
+</style>
+</head>
+<body>
+
+<div class="bw-tabs" id="bw-tabs"><!-- tab generate da JS --></div>
+
+<div class="bw-nav">
+  <span class="bw-btn" title="indietro">◄</span>
+  <span class="bw-btn" title="avanti">►</span>
+  <span class="bw-btn" id="bw-reload" title="ricarica">⟳</span>
+  <div class="bw-url"><span class="lock">▣</span><span id="bw-urltext"></span></div>
+</div>
+
+<div class="bw-page" id="bw-page"></div>
+
+<script>
+/* =========================================================
+   BROWSER — config PRE-SAVE
+   ========================================================= */
+
+/* >>> INCOLLA QUI il link presave reale (smart-link unico).
+   Se vuoti, mostra i pulsanti disabilitati con avviso. <<< */
+/* Smart-link presave feature.fm (orcd.co). I deep-link per piattaforma
+   sono gestiti server-side: ogni pulsante apre la stessa pagina presave. */
+const SMART = 'https://orcd.co/solelazy';
+
+const PRESAVE = {
+  release: 'sole',                     // titolo del progetto
+  date:    'COMING SOON',              // data o "COMING SOON"
+  cover:   '☀',                        // copertina placeholder (sole)
+  url:     SMART,
+  // Pulsanti per piattaforma → tutti allo smart-link (presave feature.fm)
+  links: [
+    { label:'PRE-SAVE · SPOTIFY',      url:SMART },
+    { label:'PRE-ADD · APPLE MUSIC',   url:SMART },
+    { label:'PRE-SAVE · DEEZER',       url:SMART },
+    { label:'PRE-SAVE · AMAZON MUSIC', url:SMART },
+    { label:'PRE-SAVE · SOUNDCLOUD',   url:SMART },
+    { label:'PRE-SAVE · TIDAL',        url:SMART },
+  ],
+};
+
+const pageEl = document.getElementById('bw-page');
+const tabsEl = document.getElementById('bw-tabs');
+const urlEl  = document.getElementById('bw-urltext');
+
+/* esc(s): escape HTML */
+function esc(s){
+  return String(s).replace(/[&<>"]/g, (c) =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
+
+/* =========================================================
+   Sistema schede
+   - scheda presave (orcd embed)
+   - nuova scheda "+" → scheda OFFLINE col gioco del dino
+   ========================================================= */
+let tabs = [{ id:1, kind:'presave', title:'PRE-SAVE — lazyyy' }];
+let activeId = 1;
+let nextId = 2;
+let dino = null;   // istanza gioco attiva (per fermarla)
+
+/* renderTabs(): disegna la barra schede + pulsante nuova scheda */
+function renderTabs(){
+  tabsEl.innerHTML = '';
+  tabs.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'bw-tab' + (t.id === activeId ? ' active' : '');
+    const label = t.kind === 'dino' ? '⚠ OFFLINE' : '♪ ' + t.title;
+    el.innerHTML = `<span>${esc(label)}</span><span class="x" title="chiudi">×</span>`;
+    el.onclick = (e) => {
+      if (e.target.classList.contains('x')) closeTab(t.id);
+      else activate(t.id);
+    };
+    tabsEl.appendChild(el);
+  });
+  const add = document.createElement('div');
+  add.className = 'bw-newtab';
+  add.title = 'nuova scheda';
+  add.textContent = '+';
+  add.onclick = addTab;
+  tabsEl.appendChild(add);
+}
+
+/* stopDino(): ferma il loop del gioco se attivo */
+function stopDino(){ if(dino){ dino.stop(); dino = null; } }
+
+/* renderActive(): mostra il contenuto della scheda attiva */
+function renderActive(){
+  stopDino();
+  const t = tabs.find(x => x.id === activeId);
+  if(!t){ pageEl.innerHTML = ''; urlEl.textContent = 'browser://vuoto'; return; }
+  if(t.kind === 'presave'){
+    urlEl.textContent = PRESAVE.url.replace(/^https?:\/\//, '');
+    renderEmbed();
+  } else {
+    urlEl.textContent = 'browser://offline';
+    dino = startDino(pageEl);
+  }
+}
+
+function activate(id){ activeId = id; renderTabs(); renderActive(); }
+
+/* addTab(): apre una nuova scheda OFFLINE (gioco dino) */
+function addTab(){
+  const id = nextId++;
+  tabs.push({ id, kind:'dino', title:'OFFLINE' });
+  activeId = id;
+  renderTabs(); renderActive();
+}
+
+/* closeTab(id): chiude una scheda; passa alla vicina */
+function closeTab(id){
+  const i = tabs.findIndex(x => x.id === id);
+  if(i < 0) return;
+  tabs.splice(i, 1);
+  if(activeId === id) activeId = tabs.length ? tabs[Math.max(0, i-1)].id : null;
+  renderTabs(); renderActive();
+}
+
+/* renderEmbed(): pagina presave reale (orcd) nella scheda */
+function renderEmbed(){
+  pageEl.innerHTML =
+    `<div class="bw-fallback">` +
+      `presave reale di lazyyy · pagina non visibile? ` +
+      `<a href="${esc(PRESAVE.url)}" target="_blank" rel="noopener">apri in scheda esterna ⇗</a>` +
+    `</div>` +
+    `<iframe class="bw-embed" src="${esc(PRESAVE.url)}" ` +
+      `title="PRE-SAVE ${esc(PRESAVE.release)}" ` +
+      `allow="clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+}
+
+document.getElementById('bw-reload').onclick = () => renderActive();
+
+/* =========================================================
+   Gioco del dinosauro (T-Rex runner) su canvas
+   ========================================================= */
+function startDino(container){
+  container.innerHTML =
+    '<div class="dino-wrap">' +
+      '<div class="dino-head">' +
+        '<div class="t">⚠ OFFLINE</div>' +
+        '<div class="s">impossibile raggiungere la rete — gioca mentre aspetti</div>' +
+      '</div>' +
+      '<canvas class="dino-cv"></canvas>' +
+      '<div class="dino-bar">' +
+        '<span>SPAZIO / CLICK = salta</span>' +
+        '<span>HI <span class="hi" id="dino-hi">0000</span> · <span id="dino-sc">0000</span></span>' +
+      '</div>' +
+    '</div>';
+
+  const cv  = container.querySelector('.dino-cv');
+  const ctx = cv.getContext('2d');
+  const scEl = container.querySelector('#dino-sc');
+  const hiEl = container.querySelector('#dino-hi');
+  const PH = '#d4f5a0', AM = '#ffcc44', GREY = '#8a857e';
+
+  let W = 0, H = 0, groundY = 0;
+  // ridimensiona il canvas alla scheda
+  function resize(){
+    W = cv.width = cv.clientWidth || 600;
+    H = cv.height = cv.clientHeight || 160;
+    groundY = H - 24;
+    if(dinoY === undefined || onGround) dinoY = groundY - dinoH;
+  }
+  const ro = new ResizeObserver(resize);
+
+  // stato gioco
+  const dinoX = 36, dinoW = 22, dinoH = 24;
+  const G = 0.7, JUMP = -11;
+  let dinoY, vy, onGround, speed, dist, spawnIn, obstacles, score, hi = 0, over, started;
+  function reset(){
+    vy = 0; onGround = true; speed = 5; dist = 0; spawnIn = 60;
+    obstacles = []; score = 0; over = false; started = false;
+    dinoY = groundY - dinoH;
+  }
+  resize(); reset(); ro.observe(cv);
+
+  /* jump(): salta o, se game over, ricomincia */
+  function jump(){
+    if(over){ reset(); return; }
+    started = true;
+    if(onGround){ vy = JUMP; onGround = false; }
+  }
+  function onKey(e){
+    if(e.code === 'Space' || e.code === 'ArrowUp' || e.key === ' '){ e.preventDefault(); jump(); }
+  }
+  window.addEventListener('keydown', onKey);
+  cv.addEventListener('mousedown', jump);
+
+  /* spawn(): genera un cactus a destra */
+  function spawn(){
+    obstacles.push({ x: W + 10, w: 10 + Math.random()*8, h: 18 + Math.random()*26 });
+  }
+
+  /* drawDino(): dino pixel-blocky verde fosforo */
+  function drawDino(){
+    const x = dinoX, y = dinoY;
+    ctx.fillStyle = PH;
+    ctx.fillRect(x, y+6, 14, 12);       // corpo
+    ctx.fillRect(x+10, y, 12, 10);      // testa
+    ctx.fillRect(x-4, y+6, 4, 4);       // coda
+    ctx.fillStyle = '#0d0d0c'; ctx.fillRect(x+18, y+2, 2, 2);  // occhio
+    ctx.fillStyle = PH;
+    const step = Math.floor(dist/6) % 2 === 0 && onGround && !over;  // gambe alternate
+    ctx.fillRect(x+3,  y+18, 4, step ? 6 : 4);
+    ctx.fillRect(x+10, y+18, 4, step ? 4 : 6);
+  }
+
+  let raf = null;
+  function loop(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = GREY;
+    ctx.beginPath(); ctx.moveTo(0, groundY+2); ctx.lineTo(W, groundY+2); ctx.stroke();
+
+    if(started && !over){
+      vy += G; dinoY += vy;
+      if(dinoY >= groundY - dinoH){ dinoY = groundY - dinoH; vy = 0; onGround = true; }
+      dist += speed; score = Math.floor(dist/10); speed = 5 + score*0.005;
+      if(--spawnIn <= 0){ spawn(); spawnIn = Math.max(40, 90 - score*0.05 - Math.random()*20); }
+    }
+
+    ctx.fillStyle = PH;
+    for(const o of obstacles){
+      if(started && !over) o.x -= speed;
+      ctx.fillRect(o.x, groundY - o.h, o.w, o.h);                 // tronco
+      ctx.fillRect(o.x-3, groundY - o.h*0.5, 3, 6);              // braccio sx
+      ctx.fillRect(o.x+o.w, groundY - o.h*0.6, 3, 6);            // braccio dx
+      if(!over && dinoX < o.x + o.w && dinoX + dinoW > o.x && dinoY + dinoH > groundY - o.h){
+        over = true; hi = Math.max(hi, score);
+      }
+    }
+    obstacles = obstacles.filter(o => o.x + o.w > -5);
+
+    drawDino();
+    scEl.textContent = String(score).padStart(4, '0');
+    hiEl.textContent = String(hi).padStart(4, '0');
+
+    ctx.textAlign = 'center';
+    if(!started){
+      ctx.fillStyle = GREY; ctx.font = "14px 'Share Tech Mono',monospace";
+      ctx.fillText('SPAZIO / CLICK per iniziare', W/2, H/2);
+    } else if(over){
+      ctx.fillStyle = AM; ctx.font = "16px 'Share Tech Mono',monospace";
+      ctx.fillText('GAME OVER', W/2, H/2 - 8);
+      ctx.fillStyle = GREY; ctx.font = "12px 'Share Tech Mono',monospace";
+      ctx.fillText('CLICK per ricominciare', W/2, H/2 + 12);
+    }
+
+    raf = requestAnimationFrame(loop);
+  }
+  raf = requestAnimationFrame(loop);
+
+  // API per fermare il gioco quando la scheda cambia/chiude
+  return {
+    stop(){
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', onKey);
+      ro.disconnect();
+    },
+  };
+}
+
+// Avvio browser
+renderTabs();
+renderActive();
+</script>
+</body>
+</html>

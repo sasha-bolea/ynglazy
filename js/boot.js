@@ -29,7 +29,7 @@
     ['SYS bootloader v0.8.7', 'none'],
     ['Cold start :: phosphor warmup', 'none'],
     ['Loading audio kernel ............', 'ok'],
-    ['Mounting sample library ........', 'warn', '[WARN: 847 missing]'],
+    ['Mounting sample library ........', 'ok'],
     ['Calibrating CRT phosphor .......', 'ok'],
     ['Initializing chaos module ......', 'ok'],
     ['Decoding 0x4C5A5959 ............', 'none'],

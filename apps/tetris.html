@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TETRIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   TETRIS — app standalone (iframe). Estetica CRT LZYYY_SYS.
+   ========================================================= */
+:root{
+  --white:#f0ede8; --offwhite:#e2ddd6; --grey-l:#c8c3bc;
+  --grey-m:#8a857e; --grey-d:#3a3732; --black:#111010;
+  --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --glow-ph:0 0 4px rgba(212,245,160,.55);
+  --glow-am:0 0 4px rgba(255,204,68,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--panel); color:var(--grey-l);
+  font-family:'IBM Plex Mono',monospace; font-size:13px;
+  cursor:crosshair; user-select:none; overflow:hidden;
+  display:flex; min-height:0;
+}
+.tt-stage{
+  flex-shrink:0; padding:12px; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(212,245,160,.06), transparent 60%),
+    #0d0d0c;
+}
+#tt-board{ border:1px solid var(--grey-m); background:#0a0a09; box-shadow:0 0 16px rgba(212,245,160,.12); }
+
+/* Overlay messaggi (pausa / game over / easter egg) */
+.tt-overlay{
+  position:absolute; inset:12px;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:8px; padding:16px;
+  background:rgba(10,10,9,.86); z-index:2;
+}
+.tt-overlay.show{ display:flex; }
+.tt-overlay .big{
+  font-family:'VT323',monospace; font-size:44px; line-height:1;
+  color:var(--am); text-shadow:var(--glow-am);
+}
+.tt-overlay .sub{ font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--grey-l); line-height:1.5; }
+.tt-overlay .key{ color:var(--ph); text-shadow:var(--glow-ph); }
+
+/* Pannello laterale */
+.tt-side{
+  flex:1; min-width:0; padding:12px;
+  display:flex; flex-direction:column; gap:12px;
+  background:#161512; border-left:1px solid var(--grey-m);
+  overflow:auto;
+}
+.tt-side h2{
+  font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:2px;
+  color:var(--ph); text-shadow:var(--glow-ph); font-weight:700;
+}
+.tt-stat{ display:flex; justify-content:space-between; font-family:'Share Tech Mono',monospace; font-size:12px; }
+.tt-stat .k{ color:var(--grey-m); }
+.tt-stat .v{ color:var(--am); text-shadow:var(--glow-am); }
+.tt-next{ display:flex; flex-direction:column; gap:4px; }
+.tt-next .lbl{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m); letter-spacing:1px; }
+#tt-next-cv{ background:#0a0a09; border:1px solid var(--grey-m); align-self:flex-start; }
+.tt-keys{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m); line-height:1.7; }
+.tt-keys b{ color:var(--grey-l); }
+.tt-music{ margin-top:auto; }
+.tt-music .lbl{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m); margin-bottom:5px; letter-spacing:1px; }
+.tt-music iframe{ border:0; width:100%; border-radius:0; }
+
+::-webkit-scrollbar{ width:8px; }
+::-webkit-scrollbar-track{ background:var(--panel); }
+::-webkit-scrollbar-thumb{ background:var(--grey-m); border:1px solid var(--black); }
+</style>
+</head>
+<body>
+
+<div class="tt-stage">
+  <canvas id="tt-board" width="220" height="440"></canvas>
+  <div class="tt-overlay" id="tt-overlay">
+    <div class="big" id="tt-ov-big">PAUSA</div>
+    <div class="sub" id="tt-ov-sub"></div>
+  </div>
+</div>
+
+<div class="tt-side">
+  <h2>TETRIS</h2>
+  <div class="tt-stat"><span class="k">SCORE</span><span class="v" id="tt-score">0</span></div>
+  <div class="tt-stat"><span class="k">LINES</span><span class="v" id="tt-lines">0</span></div>
+  <div class="tt-stat"><span class="k">LEVEL</span><span class="v" id="tt-level">1</span></div>
+
+  <div class="tt-next">
+    <span class="lbl">NEXT</span>
+    <canvas id="tt-next-cv" width="96" height="64"></canvas>
+  </div>
+
+  <div class="tt-keys">
+    <b>←/→</b> muovi · <b>↑</b> ruota<br>
+    <b>↓</b> soft drop · <b>SPAZIO</b> hard drop<br>
+    <b>P</b> pausa · <b>R</b> restart
+  </div>
+
+  <div class="tt-music">
+    <div class="lbl">// COLONNA SONORA — lazyyy</div>
+    <iframe src="https://open.spotify.com/embed/track/47X0Elw50hDXurjfcggfVs?theme=0"
+            height="80" allow="encrypted-media" loading="lazy" title="lazyyy"></iframe>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   TETRIS — logica
+   ========================================================= */
+const COLS = 10, ROWS = 20, CELL = 22;
+const board = document.getElementById('tt-board');
+const ctx = board.getContext('2d');
+const nextCv = document.getElementById('tt-next-cv');
+const nctx = nextCv.getContext('2d');
+
+const scoreEl = document.getElementById('tt-score');
+const linesEl = document.getElementById('tt-lines');
+const levelEl = document.getElementById('tt-level');
+const overlay = document.getElementById('tt-overlay');
+const ovBig = document.getElementById('tt-ov-big');
+const ovSub = document.getElementById('tt-ov-sub');
+
+/* Tetromini + colori (palette CRT) */
+const SHAPES = {
+  I: [[1,1,1,1]],
+  O: [[1,1],[1,1]],
+  T: [[0,1,0],[1,1,1]],
+  S: [[0,1,1],[1,1,0]],
+  Z: [[1,1,0],[0,1,1]],
+  J: [[1,0,0],[1,1,1]],
+  L: [[0,0,1],[1,1,1]],
+};
+const COLORS = {
+  I:'#d4f5a0', O:'#ffcc44', T:'#c8c3bc',
+  S:'#8aa86a', Z:'#d18b5e', J:'#7fb0c0', L:'#e2ddd6',
+};
+const TYPES = Object.keys(SHAPES);
+
+let grid, cur, next, score, lines, level, dropMs, lastDrop, paused, over, ee7Shown;
+
+/* newGrid(): matrice vuota ROWS x COLS */
+function newGrid(){
+  return Array.from({length:ROWS}, () => Array(COLS).fill(null));
+}
+
+/* randPiece(): nuovo pezzo casuale centrato in alto */
+function randPiece(){
+  const t = TYPES[(Math.random()*TYPES.length)|0];
+  const m = SHAPES[t].map(r => r.slice());
+  return { t, m, color:COLORS[t], x:((COLS - m[0].length)/2)|0, y:0 };
+}
+
+/* rotate(m): ruota matrice in senso orario */
+function rotate(m){
+  const R = m.length, C = m[0].length;
+  const out = Array.from({length:C}, () => Array(R).fill(0));
+  for(let r=0;r<R;r++) for(let c=0;c<C;c++) out[c][R-1-r] = m[r][c];
+  return out;
+}
+
+/* collide(piece): true se il pezzo esce o si sovrappone */
+function collide(p){
+  for(let r=0;r<p.m.length;r++){
+    for(let c=0;c<p.m[r].length;c++){
+      if(!p.m[r][c]) continue;
+      const x = p.x + c, y = p.y + r;
+      if(x<0 || x>=COLS || y>=ROWS) return true;
+      if(y>=0 && grid[y][x]) return true;
+    }
+  }
+  return false;
+}
+
+/* merge(): fissa il pezzo corrente nella griglia */
+function merge(){
+  cur.m.forEach((row,r) => row.forEach((v,c) => {
+    if(v){ const y=cur.y+r, x=cur.x+c; if(y>=0) grid[y][x]=cur.color; }
+  }));
+}
+
+/* clearLines(): rimuove le righe piene, aggiorna score/level */
+function clearLines(){
+  let cleared = 0;
+  for(let r=ROWS-1;r>=0;r--){
+    if(grid[r].every(c => c)){
+      grid.splice(r,1); grid.unshift(Array(COLS).fill(null));
+      cleared++; r++;
+    }
+  }
+  if(cleared){
+    const pts = [0,100,300,500,800][cleared] * level;
+    score += pts; lines += cleared;
+    level = 1 + Math.floor(lines/10);
+    dropMs = Math.max(90, 700 - (level-1)*55);
+    checkEE7();
+    updateHUD();
+  }
+}
+
+/* spawn(): porta "next" in gioco; game over se collide subito */
+function spawn(){
+  cur = next; next = randPiece();
+  drawNext();
+  if(collide(cur)){ gameOver(); }
+}
+
+/* step(): scende di una riga o blocca */
+function step(){
+  cur.y++;
+  if(collide(cur)){ cur.y--; merge(); clearLines(); spawn(); }
+  lastDrop = performance.now();
+}
+
+/* move(dx): sposta orizzontale se possibile */
+function move(dx){
+  cur.x += dx;
+  if(collide(cur)) cur.x -= dx;
+}
+
+/* tryRotate(): ruota con wall-kick semplice */
+function tryRotate(){
+  const old = cur.m;
+  cur.m = rotate(cur.m);
+  for(const k of [0,-1,1,-2,2]){
+    cur.x += k;
+    if(!collide(cur)) return;
+    cur.x -= k;
+  }
+  cur.m = old; // annulla se impossibile
+}
+
+/* hardDrop(): cade fino in fondo */
+function hardDrop(){
+  let d=0;
+  while(!collide(cur)){ cur.y++; d++; }
+  cur.y--; d--;
+  if(d>0) score += d*2;
+  merge(); clearLines(); spawn(); updateHUD();
+  lastDrop = performance.now();
+}
+
+/* ghostY(): riga di atterraggio del pezzo (ombra) */
+function ghostY(){
+  const g = { ...cur, m:cur.m };
+  let y = cur.y;
+  while(true){ g.y = y+1; if(collide(g)) break; y++; }
+  return y;
+}
+
+/* drawCell(x,y,color,ctx2,cell): blocco con bordo interno */
+function drawCell(x,y,color,c2=ctx,cell=CELL){
+  c2.fillStyle = color;
+  c2.fillRect(x*cell, y*cell, cell, cell);
+  c2.fillStyle = 'rgba(0,0,0,.35)';
+  c2.fillRect(x*cell, y*cell, cell, 2);
+  c2.fillRect(x*cell, y*cell, 2, cell);
+  c2.strokeStyle = 'rgba(0,0,0,.5)';
+  c2.strokeRect(x*cell+0.5, y*cell+0.5, cell-1, cell-1);
+}
+
+/* draw(): rendering campo + ghost + pezzo corrente */
+function draw(){
+  ctx.clearRect(0,0,board.width,board.height);
+  // griglia debole
+  ctx.strokeStyle = 'rgba(138,133,126,.10)';
+  for(let x=0;x<=COLS;x++){ ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,ROWS*CELL); ctx.stroke(); }
+  for(let y=0;y<=ROWS;y++){ ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(COLS*CELL,y*CELL); ctx.stroke(); }
+  // blocchi fissi
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(grid[r][c]) drawCell(c,r,grid[r][c]);
+  // ghost
+  if(!over){
+    const gy = ghostY();
+    ctx.globalAlpha = 0.22;
+    cur.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) drawCell(cur.x+c, gy+r, cur.color); }));
+    ctx.globalAlpha = 1;
+    // pezzo corrente
+    cur.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v && cur.y+r>=0) drawCell(cur.x+c, cur.y+r, cur.color); }));
+  }
+}
+
+/* drawNext(): anteprima prossimo pezzo */
+function drawNext(){
+  nctx.clearRect(0,0,nextCv.width,nextCv.height);
+  const cell = 16;
+  const w = next.m[0].length, h = next.m.length;
+  const ox = ((nextCv.width - w*cell)/2/cell);
+  const oy = ((nextCv.height - h*cell)/2/cell);
+  next.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) drawCell(ox+c, oy+r, next.color, nctx, cell); }));
+}
+
+/* updateHUD(): aggiorna score/lines/level */
+function updateHUD(){
+  scoreEl.textContent = score;
+  linesEl.textContent = lines;
+  levelEl.textContent = level;
+}
+
+/* checkEE7(): easter egg score > 1000 */
+function checkEE7(){
+  if(!ee7Shown && score > 1000){
+    ee7Shown = true;
+    showOverlay('987.',
+      'hai superato 1000.<br>lazyyy ne ha fatti di numeri.<br><span class="key">P</span> per continuare');
+    paused = true;
+  }
+}
+
+/* showOverlay(big,sub) / hideOverlay() */
+function showOverlay(big, sub){ ovBig.innerHTML = big; ovSub.innerHTML = sub; overlay.classList.add('show'); }
+function hideOverlay(){ overlay.classList.remove('show'); }
+
+/* gameOver(): fine partita */
+function gameOver(){
+  over = true; paused = true;
+  showOverlay('GAME OVER', `score <span class="key">${score}</span><br><span class="key">R</span> per ricominciare`);
+}
+
+/* togglePause() */
+function togglePause(){
+  if(over) return;
+  paused = !paused;
+  if(paused){ showOverlay('PAUSA','<span class="key">P</span> per riprendere'); }
+  else { hideOverlay(); lastDrop = performance.now(); }
+}
+
+/* reset(): nuova partita */
+function reset(){
+  grid = newGrid();
+  score = 0; lines = 0; level = 1; dropMs = 700;
+  paused = false; over = false; ee7Shown = false;
+  next = randPiece(); spawn();
+  hideOverlay(); updateHUD();
+  lastDrop = performance.now();
+}
+
+/* loop(): game loop con gravità a tempo */
+function loop(now){
+  if(!paused && !over){
+    if(now - lastDrop >= dropMs) step();
+    draw();
+  }
+  requestAnimationFrame(loop);
+}
+
+/* input da tastiera */
+window.addEventListener('keydown', (e) => {
+  const k = e.key;
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(k)) e.preventDefault();
+  if(k === 'p' || k === 'P'){ togglePause(); return; }
+  if(k === 'r' || k === 'R'){ reset(); return; }
+  if(paused || over) return;
+  if(k === 'ArrowLeft')  move(-1);
+  else if(k === 'ArrowRight') move(1);
+  else if(k === 'ArrowDown'){ step(); score += 1; updateHUD(); }
+  else if(k === 'ArrowUp') tryRotate();
+  else if(k === ' ') hardDrop();
+  draw();
+});
+
+reset();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

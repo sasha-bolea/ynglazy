@@ -13,7 +13,8 @@
      Senza file → finestra placeholder "non installato". */
   const ICONS = [
     { app: 'file-manager', glyph: '🎵', label: 'FILE_MGR', file: 'apps/file-manager.html', w: 560, h: 380 },
-    { app: 'tetris',       glyph: '🧱', label: 'TETRIS'   },
+    { app: 'browser',      glyph: '🌐', label: 'BROWSER',  file: 'apps/browser.html',      w: 640, h: 460 },
+    { app: 'tetris',       glyph: '🧱', label: 'TETRIS',   file: 'apps/tetris.html',       w: 460, h: 480 },
     { app: 'synth-7',      glyph: '🎹', label: 'SYNTH-7'  },
     { app: 'terminal',     glyph: '💻', label: 'TERMINAL' },
     { app: 'about',        glyph: '📄', label: 'ABOUT.EXE'},
@@ -24,22 +25,76 @@
 
   let winZ = 100;   // z-index incrementale finestre
 
+  /* Snapshot di fallback per le icone progetto se il fetch fallisce */
+  const FALLBACK_PROJECTS = [
+    { name: '#FFFFFF', type: 'album' },
+    { name: 'Non c’è pace', type: 'single' },
+  ];
+
   /* -----------------------------------------------------------
-     buildIcons(): genera le icone nel layer desktop
+     buildIcons(): Cestino + icone progetto sul desktop.
+     Le altre app stanno nella taskbar (buildLaunchers).
      ----------------------------------------------------------- */
   function buildIcons() {
     const layer = document.getElementById('icon-layer');
-    ICONS.forEach((ic) => {
-      const el = document.createElement('div');
-      el.className = 'desk-icon';
-      el.dataset.app = ic.app;
-      el.innerHTML =
-        `<div class="glyph">${ic.glyph}</div>` +
-        `<div class="label">${ic.label}</div>`;
-      layer.appendChild(el);
-    });
     layer.addEventListener('click', onIconSingleClick);
     layer.addEventListener('dblclick', onIconOpen);
+
+    // Icona Cestino (apre il File Manager nella cartella Cestino)
+    const trash = ICONS.find((i) => i.app === 'trash');
+    layer.appendChild(makeIcon({ glyph: trash.glyph, label: trash.label, attr: { app: 'trash' } }));
+  }
+
+  /* makeIcon(opt): crea un nodo icona desktop */
+  function makeIcon({ glyph, label, attr }) {
+    const el = document.createElement('div');
+    el.className = 'desk-icon';
+    Object.entries(attr).forEach(([k, v]) => { el.dataset[k] = v; });
+    el.innerHTML = `<div class="glyph">${glyph}</div><div class="label">${label}</div>`;
+    return el;
+  }
+
+  /* -----------------------------------------------------------
+     buildProjectIcons(projects): un'icona per progetto.
+     Doppio click → apre il File Manager su Desktop/<progetto>.
+     ----------------------------------------------------------- */
+  function buildProjectIcons(projects) {
+    const layer = document.getElementById('icon-layer');
+    // Rimuovi eventuali icone progetto precedenti (re-render post fetch)
+    layer.querySelectorAll('.desk-icon[data-proj]').forEach((n) => n.remove());
+    projects.forEach((p) => {
+      layer.appendChild(makeIcon({
+        glyph: '💿',
+        label: p.name,
+        attr: { proj: p.name },
+      }));
+    });
+  }
+
+  /* -----------------------------------------------------------
+     buildLaunchers(): tutte le app tranne il Cestino come
+     pulsanti nella taskbar. Click singolo = apri.
+     ----------------------------------------------------------- */
+  function buildLaunchers() {
+    const bar = document.getElementById('tb-launch');
+    ICONS.filter((ic) => ic.app !== 'trash').forEach((ic) => {
+      const b = document.createElement('div');
+      b.className = 'tb-app';
+      b.dataset.app = ic.app;
+      b.title = ic.label;
+      b.innerHTML = `<span class="g">${ic.glyph}</span><span class="t">${ic.label}</span>`;
+      b.addEventListener('click', () => openApp(ic));
+      bar.appendChild(b);
+    });
+  }
+
+  /* -----------------------------------------------------------
+     openApp(def): dispatcher. App con file standalone → iframe;
+     altrimenti finestra placeholder.
+     ----------------------------------------------------------- */
+  function openApp(def) {
+    if (def.file) openAppWindow(def);
+    else openPlaceholderWindow(def);
   }
 
   /* -----------------------------------------------------------
@@ -53,25 +108,48 @@
   }
 
   /* -----------------------------------------------------------
-     onIconOpen(e): doppio click → apre finestra placeholder
+     onIconOpen(e): doppio click su icona desktop.
+     Progetto → File Manager su Desktop/<nome>; Cestino → cartella
+     Cestino; altrimenti apre l'app.
      ----------------------------------------------------------- */
   function onIconOpen(e) {
     const icon = e.target.closest('.desk-icon');
     if (!icon) return;
-    const def = ICONS.find((i) => i.app === icon.dataset.app);
-    // App con file standalone → finestra con iframe; altrimenti placeholder
-    if (def.file) openAppWindow(def);
-    else openPlaceholderWindow(def);
+    if (icon.dataset.proj) return openFM(['Desktop', icon.dataset.proj]);
+    if (icon.dataset.app === 'trash') return openFM(['Cestino']);
+    openApp(ICONS.find((i) => i.app === icon.dataset.app));
+  }
+
+  /* -----------------------------------------------------------
+     openFM(pathArr): apre il File Manager navigato su un percorso.
+     ----------------------------------------------------------- */
+  function openFM(pathArr) {
+    const fm = ICONS.find((i) => i.app === 'file-manager');
+    openAppWindow(fm, pathArr);
   }
 
   /* -----------------------------------------------------------
      openAppWindow(def): finestra che carica un'app standalone
      in un iframe. Una sola istanza per app (focus se già aperta).
      ----------------------------------------------------------- */
-  function openAppWindow(def) {
-    // Se già aperta, portala in primo piano
+  function openAppWindow(def, navPath) {
+    // Percorso → stringa (segmenti encodeURIComponent uniti da '/')
+    const pathStr = Array.isArray(navPath)
+      ? navPath.map(encodeURIComponent).join('/') : '';
+
+    // Se già aperta: focus + (se richiesto) naviga via postMessage
     const existing = document.querySelector(`.win[data-app="${def.app}"]`);
-    if (existing) { existing.style.zIndex = ++winZ; return; }
+    if (existing) {
+      existing.style.zIndex = ++winZ;
+      if (pathStr) {
+        const frame = existing.querySelector('iframe');
+        frame.contentWindow.postMessage({ type: 'fm-nav', path: pathStr }, '*');
+      }
+      return;
+    }
+
+    // Fragment (#) invece di query: sopravvive al redirect clean-URL del server
+    const src = def.file + (pathStr ? '#' + pathStr : '');
 
     const win = document.createElement('div');
     win.className = 'win';
@@ -87,7 +165,7 @@
         `<span class="win-close" title="chiudi">×</span>` +
       `</div>` +
       `<div class="win-body win-app">` +
-        `<iframe src="${def.file}" title="${def.label}"></iframe>` +
+        `<iframe src="${src}" title="${def.label}"></iframe>` +
       `</div>`;
 
     const body = win.querySelector('.win-app');
@@ -150,8 +228,16 @@
     });
     document.addEventListener('mousemove', (e) => {
       if (!dragging) return;
-      win.style.left = (e.clientX - ox) + 'px';
-      win.style.top  = (e.clientY - oy) + 'px';
+      // Vincola la finestra dentro la pagina: la barra del titolo
+      // (nome + ×) resta sempre visibile e sopra la taskbar
+      const taskbarH = document.getElementById('taskbar').offsetHeight;
+      const titleH = handle.offsetHeight;
+      const maxLeft = Math.max(0, window.innerWidth - win.offsetWidth);
+      const maxTop  = Math.max(0, window.innerHeight - taskbarH - titleH);
+      const left = Math.min(Math.max(e.clientX - ox, 0), maxLeft);
+      const top  = Math.min(Math.max(e.clientY - oy, 0), maxTop);
+      win.style.left = left + 'px';
+      win.style.top  = top + 'px';
     });
     document.addEventListener('mouseup', () => {
       if (!dragging) return;
@@ -190,8 +276,28 @@
      ----------------------------------------------------------- */
   function init() {
     buildIcons();
+    buildLaunchers();
+    buildProjectIcons(FALLBACK_PROJECTS);   // icone immediate
+    loadProjectIcons();                      // poi aggiorna dai dati vivi
     startClock();
     document.getElementById('desktop').addEventListener('click', deselectOnVoid);
+    // All'avvio apre il Browser con la scheda PRE-SAVE già davanti
+    openApp(ICONS.find((i) => i.app === 'browser'));
+  }
+
+  /* -----------------------------------------------------------
+     loadProjectIcons(): legge data/discography.json e rigenera
+     le icone progetto sul desktop. Fallback resta lo snapshot.
+     ----------------------------------------------------------- */
+  async function loadProjectIcons() {
+    try {
+      const r = await fetch('data/discography.json', { cache: 'no-cache' });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (Array.isArray(data.projects) && data.projects.length) {
+        buildProjectIcons(data.projects);
+      }
+    } catch (_) { /* offline: restano le icone di fallback */ }
   }
 
   // Il desktop si inizializza alla fine del boot.
