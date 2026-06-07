@@ -1,0 +1,129 @@
+/* =========================================================
+   LZYYY_SYS — base.css
+   Variabili globali + reset + overlay CRT condivisi
+   Estetica: base fredda neutra + fosfori CRT (verde/ambra)
+   Mood: PC-98 denso + Serial Experiments Lain (hex, scanline)
+   ========================================================= */
+
+:root {
+  /* --- Palette base fredda --- */
+  --white:    #f0ede8;
+  --offwhite: #e2ddd6;
+  --grey-l:   #c8c3bc;
+  --grey-m:   #8a857e;
+  --grey-d:   #3a3732;
+  --black:    #111010;
+
+  /* --- Fosfori CRT --- */
+  --ph:  #d4f5a0;   /* verde */
+  --am:  #ffcc44;   /* ambra */
+  --panel: #1c1a17; /* pannelli scuri */
+
+  /* --- Glow riutilizzabile --- */
+  --glow-ph: 0 0 4px rgba(212, 245, 160, 0.55);
+  --glow-am: 0 0 4px rgba(255, 204, 68, 0.55);
+
+  /* --- Tipografia --- */
+  --f-display: 'VT323', monospace;
+  --f-head:    'Orbitron', sans-serif;
+  --f-body:    'IBM Plex Mono', monospace;
+  --f-micro:   'Share Tech Mono', monospace;
+
+  /* --- Layout --- */
+  --taskbar-h: 30px;
+}
+
+/* Reset essenziale */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--black);
+  color: var(--grey-d);
+  font-family: var(--f-body);
+  font-size: 14px;
+  line-height: 1.4;
+  /* Cursore crosshair su tutto il sito */
+  cursor: crosshair;
+  /* Niente selezione testo accidentale trascinando finestre */
+  user-select: none;
+  -webkit-font-smoothing: none;
+}
+
+/* =========================================================
+   Overlay CRT globali (scanline + flicker + vignettatura)
+   Fissi sopra tutto, non intercettano i click
+   ========================================================= */
+
+#crt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+}
+
+/* Scanline orizzontali */
+#crt-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0)    0px,
+    rgba(0, 0, 0, 0)    2px,
+    rgba(0, 0, 0, 0.16) 3px,
+    rgba(0, 0, 0, 0.16) 3px
+  );
+  background-size: 100% 3px;
+}
+
+/* Vignettatura + flicker raro */
+#crt-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  animation: crt-flicker 6s steps(60) infinite;
+}
+
+@keyframes crt-flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97%           { opacity: 0.82; }
+  98%           { opacity: 1; }
+  99%           { opacity: 0.9; }
+}
+
+/* Respiro lento del glow fosforo (riutilizzabile via classe) */
+@keyframes phosphor-breathe {
+  0%, 100% { text-shadow: var(--glow-ph); }
+  50%      { text-shadow: 0 0 7px rgba(212, 245, 160, 0.85); }
+}
+
+/* Scrollbar custom sottile */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--panel); }
+::-webkit-scrollbar-thumb {
+  background: var(--grey-m);
+  border: 1px solid var(--black);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ph); }
+
+/* Utility */
+.ph { color: var(--ph); text-shadow: var(--glow-ph); }
+.am { color: var(--am); text-shadow: var(--glow-am); }
+.hidden { display: none !important; }

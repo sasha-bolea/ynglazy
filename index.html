@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LZYYY_SYS</title>
+
+  <!-- Font CRT (precaricati dal boot via document.fonts.ready) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style/base.css">
+  <link rel="stylesheet" href="style/boot.css">
+  <link rel="stylesheet" href="style/desktop.css">
+</head>
+<body>
+
+  <!-- ===================== DESKTOP (sotto il boot) ===================== -->
+  <div id="desktop">
+    <div class="sys-banner">
+      <b>LZYYY_SYS</b> v0.8.7 :: phosphor session<br>
+      mem 0x4C5A · samples 847 missing · coherence [FAIL]
+    </div>
+
+    <div id="icon-layer"><!-- icone generate da desktop.js --></div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+      <div class="tb-start">▚ START</div>
+      <div id="tb-tasks"><!-- finestre aperte (windows.js) --></div>
+      <div id="tb-clock">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- ===================== BOOT OVERLAY (sopra tutto) ===================== -->
+  <div id="boot-overlay">
+    <div id="boot-hex"></div>
+    <div class="boot-sub">system boot in corso · phosphor warmup</div>
+
+    <div id="boot-log"></div>
+
+    <div class="boot-progress-wrap">
+      <div class="boot-progress-meta">
+        <span>MOUNTING SYSTEM SURFACE</span>
+        <span>DO NOT POWER OFF</span>
+      </div>
+      <div id="boot-bar"><div id="boot-bar-fill"></div></div>
+      <div id="boot-bar-pct">> 000% ::</div>
+    </div>
+  </div>
+
+  <!-- Overlay CRT globale (scanline + flicker), sopra tutto, non cliccabile -->
+  <div id="crt-overlay"></div>
+
+  <script src="js/desktop.js"></script>
+  <script src="js/boot.js"></script>
+</body>
+</html>

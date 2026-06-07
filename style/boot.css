@@ -1,0 +1,147 @@
+/* =========================================================
+   LZYYY_SYS — boot.css
+   Schermata di avvio / preloader sopra il desktop
+   Copre il caricamento asset; svanisce a load completo
+   ========================================================= */
+
+#boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: #050505;
+  color: var(--ph);
+  font-family: var(--f-micro);
+  display: flex;
+  flex-direction: column;
+  padding: 4vh 5vw;
+  overflow: hidden;
+  transition: opacity 0.6s ease, filter 0.6s ease;
+}
+
+/* Stato di chiusura: flash CRT poi via */
+#boot-overlay.boot-done {
+  opacity: 0;
+  filter: brightness(2.4) blur(1px);
+  pointer-events: none;
+}
+
+/* Stream esadecimale di sfondo (mood Lain) */
+#boot-hex {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  color: rgba(212, 245, 160, 0.10);
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 1px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Header sistema */
+.boot-header {
+  position: relative;
+  z-index: 1;
+  font-family: var(--f-display);
+  font-size: clamp(28px, 6vw, 64px);
+  letter-spacing: 2px;
+  color: var(--ph);
+  text-shadow: var(--glow-ph);
+  animation: phosphor-breathe 4s ease-in-out infinite;
+  line-height: 1;
+}
+
+.boot-sub {
+  position: relative;
+  z-index: 1;
+  font-family: var(--f-micro);
+  font-size: 13px;
+  color: var(--grey-m);
+  margin-top: 6px;
+  margin-bottom: 18px;
+}
+
+/* Log terminale di avvio */
+#boot-log {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.boot-line { display: block; white-space: pre; }
+.boot-line .tag-ok   { color: var(--ph); text-shadow: var(--glow-ph); }
+.boot-line .tag-warn { color: var(--am); text-shadow: var(--glow-am); }
+.boot-line .tag-err  { color: #ff6b5e; }
+
+/* Cursore a blocco ambra, blink a step */
+.boot-cursor {
+  display: inline-block;
+  width: 9px;
+  height: 1em;
+  background: var(--am);
+  box-shadow: var(--glow-am);
+  vertical-align: text-bottom;
+  animation: step-blink 1s steps(1) infinite;
+}
+
+@keyframes step-blink {
+  0%, 50%   { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+/* Barra di avanzamento */
+.boot-progress-wrap {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+}
+
+.boot-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--grey-m);
+  margin-bottom: 5px;
+}
+
+#boot-bar {
+  height: 16px;
+  border: 1px solid var(--grey-m);
+  background: #0c0c0c;
+  position: relative;
+  /* Click sulla barra = hook easter egg EE-01 (gestito in JS) */
+  cursor: crosshair;
+}
+
+#boot-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ph);
+  box-shadow: 0 0 8px rgba(212, 245, 160, 0.7);
+  transition: width 0.25s linear;
+}
+
+/* Glitch della barra durante il freeze */
+#boot-bar.glitch #boot-bar-fill {
+  background: var(--am);
+  animation: bar-glitch 0.18s steps(2) infinite;
+}
+
+@keyframes bar-glitch {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-2px); filter: hue-rotate(40deg); }
+  100% { transform: translateX(2px); }
+}
+
+#boot-bar-pct {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: var(--am);
+  margin-top: 4px;
+}

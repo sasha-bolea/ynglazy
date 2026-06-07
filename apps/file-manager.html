@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FILE_MGR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   FILE_MGR — app standalone (caricata in iframe dal desktop)
+   Discografia reale lazyyy: 1 cartella per progetto.
+   ========================================================= */
+:root{
+  --white:#f0ede8; --offwhite:#e2ddd6; --grey-l:#c8c3bc;
+  --grey-m:#8a857e; --grey-d:#3a3732; --black:#111010;
+  --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --glow-ph:0 0 4px rgba(212,245,160,.55);
+  --glow-am:0 0 4px rgba(255,204,68,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--panel); color:var(--grey-l);
+  font-family:'IBM Plex Mono',monospace; font-size:13px;
+  cursor:crosshair; user-select:none; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.fm-toolbar{
+  display:flex; align-items:center; gap:10px;
+  height:26px; padding:0 8px;
+  background:#0f0e0c; border-bottom:1px solid var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+}
+.fm-toolbar .path{ color:var(--ph); text-shadow:var(--glow-ph); }
+.fm-toolbar .up{
+  color:var(--am); cursor:crosshair; padding:0 4px;
+  border:1px solid var(--grey-m);
+}
+.fm-toolbar .up:hover{ background:rgba(255,204,68,.15); }
+
+.fm-main{ flex:1; display:flex; min-height:0; }
+
+.fm-tree{
+  width:170px; flex-shrink:0;
+  background:#161512; border-right:1px solid var(--grey-m);
+  padding:8px 0; overflow:auto;
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+}
+.fm-tree .node{
+  padding:3px 10px; cursor:crosshair; white-space:nowrap;
+  color:var(--grey-l); overflow:hidden; text-overflow:ellipsis;
+}
+.fm-tree .node:hover{ background:rgba(212,245,160,.10); }
+.fm-tree .node.active{
+  background:rgba(255,204,68,.15); color:var(--am); text-shadow:var(--glow-am);
+}
+.fm-tree .sep{ color:var(--grey-m); padding:7px 10px 2px; font-size:10px; letter-spacing:1px; }
+
+.fm-list{ flex:1; overflow:auto; }
+.fm-row{
+  display:grid;
+  grid-template-columns:1fr 64px 96px 40px;
+  gap:8px; align-items:center;
+  padding:4px 10px; white-space:nowrap;
+  border-bottom:1px solid rgba(138,133,126,.18);
+  cursor:crosshair;
+}
+.fm-row.head{
+  position:sticky; top:0; z-index:1;
+  background:#0f0e0c; color:var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:11px;
+  letter-spacing:1px; cursor:default;
+}
+.fm-row:not(.head):hover{ background:rgba(212,245,160,.10); }
+.fm-row.selected{ background:rgba(255,204,68,.16); }
+.fm-row .nm{ overflow:hidden; text-overflow:ellipsis; }
+.fm-row .nm .ic{ margin-right:6px; }
+.fm-row .col{ color:var(--grey-m); font-size:11px;
+  font-family:'Share Tech Mono',monospace; }
+.fm-row .go{ text-align:center; color:var(--grey-m); }
+.fm-row.corrupt .nm{ color:#ff6b5e; }
+.fm-row.song .nm{ color:var(--ph); text-shadow:var(--glow-ph); }
+.fm-row.song:hover .nm{ text-decoration:underline; }
+.fm-row.song:hover .go{ color:var(--am); text-shadow:var(--glow-am); }
+.fm-row.folder .nm{ color:var(--white); }
+
+.fm-status{
+  height:22px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 10px; gap:12px;
+  background:#0f0e0c; border-top:1px solid var(--grey-m);
+  font-family:'Share Tech Mono',monospace; font-size:11px;
+  color:var(--grey-m);
+}
+.fm-status .warn{ color:var(--am); text-shadow:var(--glow-am); }
+
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-track{ background:var(--panel); }
+::-webkit-scrollbar-thumb{ background:var(--grey-m); border:1px solid var(--black); }
+</style>
+</head>
+<body>
+
+<div class="fm-toolbar">
+  <span class="up" id="fm-up" title="cartella superiore">..</span>
+  <span class="path" id="fm-path">/home/prod/</span>
+</div>
+
+<div class="fm-main">
+  <div class="fm-tree" id="fm-tree"></div>
+  <div class="fm-list" id="fm-list"></div>
+</div>
+
+<div class="fm-status">
+  <span id="fm-count">0 oggetti</span>
+  <span class="warn">disco 0x4C5A · 847 file mancanti</span>
+</div>
+
+<script>
+/* =========================================================
+   FILE_MGR — dati + logica
+   Discografia REALE scaricata via Spotify API (artista
+   principale lazyyy). Aggiornare rilanciando lo script di fetch.
+   ========================================================= */
+
+/* Snapshot di fallback. La sorgente viva è data/discography.json,
+   rigenerata dalla GitHub Action. Usato solo se il fetch fallisce. */
+let PROJECTS = [
+  {
+    name: '#FFFFFF', type: 'album', date: '2026-03-13',
+    url: 'https://open.spotify.com/album/658biHmHfCpxZBAhyOf8F6',
+    tracks: [
+      { name:'<grz>',                          ms:133718, url:'https://open.spotify.com/track/2QiqQWyhN6EJkmD9yKe3aV' },
+      { name:'mare',                           ms:168348, url:'https://open.spotify.com/track/5pCCUb0VwCIFR7ffyhlOWx' },
+      { name:'987',                            ms:223741, url:'https://open.spotify.com/track/4UihCMqZ8LZ3EgaeulpdZd' },
+      { name:'sanguini',                       ms:169495, url:'https://open.spotify.com/track/47X0Elw50hDXurjfcggfVs' },
+      { name:'non è un interludio(interludio)',ms:252415, url:'https://open.spotify.com/track/3jDx4C0RoIPFW2LDNBdNhg' },
+      { name:'cura_)',                         ms:119687, url:'https://open.spotify.com/track/4CYM7aEsVioKp2QZ2oIVH6' },
+      { name:'Matematica',                     ms:167191, url:'https://open.spotify.com/track/4FasIwPeaFlUAEDborcmtp' },
+      { name:'<\\bestia>',                     ms:222843, url:'https://open.spotify.com/track/2bTRIQSTiT2CRexGycuZCb' },
+    ],
+  },
+  {
+    name: 'Non c’è pace', type: 'single', date: '2025-10-31',
+    url: 'https://open.spotify.com/album/3fPoyV85DIW2mqdkY49sNG',
+    tracks: [
+      { name:'Non c\'è pace', ms:152816, url:'https://open.spotify.com/track/3cKZtd1cI9N5sVMofMFfJS' },
+    ],
+  },
+];
+
+/* Cartelle flavor (persona, NON discografia) */
+const EXTRA = {
+  'Samples': {
+    flavor: true,
+    items: [
+      { name:'ventilatore_6h.wav', type:'sample', dim:'6.0 GB', date:'1984-08-08' },
+      { name:'frigo_3am.wav',      type:'sample', dim:'333 MB', date:'2003-03-03' },
+      { name:'white_noise_FFFFFF', type:'sample', dim:'∞',      date:'????-??-??' },
+    ],
+  },
+  'Trash_Old_Projects': {
+    flavor: true,
+    items: [
+      { name:'[CORROTTO].prj', type:'corrupt', dim:'-1 B', date:'0000-00-00' },
+      { name:'demo_v9_DEFINITIVO_vero.wav', type:'corrupt', dim:'NaN', date:'1990-01-01' },
+    ],
+  },
+};
+
+const ROOT_FILES = [
+  { name:'README.txt', type:'file', dim:'1.2 KB', date:'1987-03-14' },
+];
+
+const ICON = { song:'♪', sample:'◈', file:'▤', corrupt:'⚠', folder:'▸', album:'▸', single:'▸', compilation:'▸' };
+
+let current = null;   // null = radice, altrimenti chiave cartella
+
+const treeEl  = document.getElementById('fm-tree');
+const listEl  = document.getElementById('fm-list');
+const pathEl  = document.getElementById('fm-path');
+const countEl = document.getElementById('fm-count');
+
+/* ms → m:ss */
+function dur(ms){
+  const s = Math.round(ms/1000);
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+
+/* findProject(name): cerca un progetto reale per nome */
+function findProject(name){ return PROJECTS.find(p => p.name === name); }
+
+/* buildTree(): radice + progetti + cartelle flavor */
+function buildTree(){
+  treeEl.innerHTML = '';
+  const root = document.createElement('div');
+  root.className = 'node' + (current === null ? ' active' : '');
+  root.textContent = '▾ /home/prod';
+  root.onclick = () => openFolder(null);
+  treeEl.appendChild(root);
+
+  const sep1 = document.createElement('div');
+  sep1.className = 'sep'; sep1.textContent = '— DISCOGRAFIA —';
+  treeEl.appendChild(sep1);
+
+  PROJECTS.forEach(p => {
+    const n = document.createElement('div');
+    n.className = 'node' + (current === p.name ? ' active' : '');
+    n.textContent = '  ▸ ' + p.name;
+    n.onclick = () => openFolder(p.name);
+    treeEl.appendChild(n);
+  });
+
+  const sep2 = document.createElement('div');
+  sep2.className = 'sep'; sep2.textContent = '— SISTEMA —';
+  treeEl.appendChild(sep2);
+
+  Object.keys(EXTRA).forEach(k => {
+    const n = document.createElement('div');
+    n.className = 'node' + (current === k ? ' active' : '');
+    n.textContent = '  ▸ ' + k;
+    n.onclick = () => openFolder(k);
+    treeEl.appendChild(n);
+  });
+}
+
+/* esc(s): escape HTML (nomi tipo <grz> o <\bestia> contengono < >) */
+function esc(s){
+  return String(s).replace(/[&<>"]/g, (c) =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
+
+/* rowHTML(item): markup riga. col1=tipo/durata, col2=data/dim, go=azione */
+function rowHTML(item){
+  const ic = ICON[item.type] || ICON.file;
+  return `<span class="nm"><span class="ic">${ic}</span>${esc(item.name)}</span>` +
+         `<span class="col">${item.c1}</span>` +
+         `<span class="col">${item.c2}</span>` +
+         `<span class="go">${item.go || ''}</span>`;
+}
+
+/* renderList(): popola il pannello destro */
+function renderList(){
+  listEl.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'fm-row head';
+  head.innerHTML = `<span>NOME</span><span>DUR</span><span>DATA</span><span>⇗</span>`;
+  listEl.appendChild(head);
+
+  let rows = [];
+
+  if(current === null){
+    // Radice: progetti (cartelle) + flavor + README
+    PROJECTS.forEach(p => rows.push({
+      name:p.name, type:'folder', c1:p.type, c2:p.date, go:'',
+      open:() => openFolder(p.name),
+    }));
+    Object.keys(EXTRA).forEach(k => rows.push({
+      name:k, type:'folder', c1:'sys', c2:'--', go:'',
+      open:() => openFolder(k),
+    }));
+    ROOT_FILES.forEach(f => rows.push({
+      name:f.name, type:f.type, c1:f.dim, c2:f.date, go:'',
+      open:() => actFile(f),
+    }));
+    pathEl.textContent = '/home/prod/';
+  }
+  else if(findProject(current)){
+    // Cartella progetto: tracce reali
+    const p = findProject(current);
+    p.tracks.forEach((t,i) => rows.push({
+      name:`${String(i+1).padStart(2,'0')}  ${t.name}.wav`,
+      type:'song', c1:dur(t.ms), c2:p.date, go:'♪',
+      open:() => window.open(t.url, '_blank', 'noopener'),
+    }));
+    pathEl.textContent = `/home/prod/${p.name}/`;
+  }
+  else if(EXTRA[current]){
+    // Cartella flavor
+    EXTRA[current].items.forEach(it => rows.push({
+      name:it.name, type:it.type, c1:it.dim, c2:it.date, go:'',
+      open:() => actFile(it),
+    }));
+    pathEl.textContent = `/home/prod/${current}/`;
+  }
+
+  rows.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'fm-row ' + r.type;
+    el.innerHTML = rowHTML(r);
+    el.onclick = () => selectRow(el);
+    el.ondblclick = r.open;
+    listEl.appendChild(el);
+  });
+
+  countEl.textContent = rows.length + ' oggetti';
+}
+
+/* selectRow(el): selezione visiva */
+function selectRow(el){
+  listEl.querySelectorAll('.fm-row.selected').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* actFile(item): azioni per file non-traccia */
+function actFile(item){
+  if(item.type === 'file')    return flash('README.txt :: ho sampleato un ventilatore per 6 ore. nessun rimpianto.');
+  if(item.type === 'sample')  return flash(`${item.name} :: stream audio non montato [847 missing]`);
+  if(item.type === 'corrupt') return flash(`${item.name} :: SETTORE ILLEGGIBILE — il disco urla.`);
+}
+
+/* openFolder(name): cambia cartella */
+function openFolder(name){
+  current = name;
+  buildTree();
+  renderList();
+}
+
+/* flash(msg): messaggio temporaneo in status bar */
+let flashTimer = null;
+function flash(msg){
+  clearTimeout(flashTimer);
+  countEl.textContent = msg;
+  flashTimer = setTimeout(() => {
+    const n = listEl.querySelectorAll('.fm-row:not(.head)').length;
+    countEl.textContent = n + ' oggetti';
+  }, 2600);
+}
+
+document.getElementById('fm-up').onclick = () => openFolder(null);
+
+/* loadDiscography(): carica i dati vivi da data/discography.json
+   (aggiornati dalla GitHub Action). Se fallisce, resta lo snapshot. */
+async function loadDiscography(){
+  try{
+    const r = await fetch('../data/discography.json', { cache:'no-cache' });
+    if(!r.ok) return;
+    const data = await r.json();
+    if(Array.isArray(data.projects) && data.projects.length){
+      PROJECTS = data.projects;
+      if(current === null || findProject(current)){ buildTree(); renderList(); }
+    }
+  }catch(_){ /* offline / file assente: tiene lo snapshot */ }
+}
+
+buildTree();
+renderList();
+loadDiscography();
+</script>
+</body>
+</html>

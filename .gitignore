@@ -1,0 +1,20 @@
+# Segreti / ambiente
+.env
+.env.*
+!.env.example
+
+# Dipendenze
+node_modules/
+
+# Script temporanei
+_tmp_*
+
+# Log
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

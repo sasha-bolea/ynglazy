@@ -1,0 +1,223 @@
+/* =========================================================
+   LZYYY_SYS — desktop.css
+   Desktop, griglia icone, taskbar, orologio
+   ========================================================= */
+
+#desktop {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(212,245,160,0.05), transparent 60%),
+    var(--white);
+  /* Texture pixel-noise sottile (mood PC-98) */
+  background-blend-mode: normal;
+  overflow: hidden;
+}
+
+/* Rumore digitale animato leggero */
+#desktop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.05;
+  background-image:
+    repeating-linear-gradient(0deg, var(--grey-d) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, var(--grey-d) 0 1px, transparent 1px 2px);
+  background-size: 3px 3px;
+  pointer-events: none;
+  animation: noise-shift 0.4s steps(4) infinite;
+}
+
+@keyframes noise-shift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-1px, 1px); }
+  50%  { transform: translate(1px, -1px); }
+  75%  { transform: translate(-1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Banner sistema in alto a sinistra (mood Lain hex/log) */
+.sys-banner {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 1;
+  font-family: var(--f-micro);
+  font-size: 11px;
+  color: var(--grey-m);
+  line-height: 1.5;
+  pointer-events: none;
+}
+.sys-banner b { color: var(--grey-d); font-weight: 400; }
+
+/* =========================================================
+   Griglia icone desktop
+   ========================================================= */
+
+#icon-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 60px 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  height: calc(100% - var(--taskbar-h));
+}
+
+.desk-icon {
+  width: 92px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  border: 1px solid transparent;
+  cursor: crosshair;
+  transition: background 0.08s, border-color 0.08s;
+}
+
+.desk-icon:hover {
+  background: rgba(212, 245, 160, 0.14);
+  border-color: var(--grey-l);
+}
+
+.desk-icon.selected {
+  background: rgba(255, 204, 68, 0.18);
+  border-color: var(--am);
+}
+
+.desk-icon .glyph {
+  font-size: 30px;
+  line-height: 1;
+  filter: grayscale(0.2) contrast(1.1);
+  /* Resa pixelata delle emoji per coerenza retro */
+  image-rendering: pixelated;
+}
+
+.desk-icon .label {
+  font-family: var(--f-micro);
+  font-size: 11px;
+  color: var(--grey-d);
+  letter-spacing: 0.5px;
+  word-break: break-word;
+}
+
+/* =========================================================
+   Taskbar
+   ========================================================= */
+
+#taskbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--taskbar-h);
+  z-index: 5000;
+  background: var(--panel);
+  border-top: 1px solid var(--grey-m);
+  display: flex;
+  align-items: stretch;
+  font-family: var(--f-micro);
+  font-size: 12px;
+  color: var(--white);
+}
+
+.tb-start {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-family: var(--f-head);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--ph);
+  text-shadow: var(--glow-ph);
+  border-right: 1px solid var(--grey-m);
+  cursor: crosshair;
+}
+.tb-start:hover { background: rgba(212, 245, 160, 0.12); }
+
+/* Area finestre aperte (popolata da windows.js più avanti) */
+#tb-tasks {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  overflow: hidden;
+}
+
+#tb-clock {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-left: 1px solid var(--grey-m);
+  color: var(--am);
+  text-shadow: var(--glow-am);
+  letter-spacing: 1px;
+  cursor: crosshair;
+}
+
+/* =========================================================
+   Finestra placeholder (versione minima, pre-windows.js)
+   ========================================================= */
+
+.win {
+  position: absolute;
+  z-index: 100;
+  min-width: 280px;
+  background: var(--offwhite);
+  border: 1px solid var(--grey-d);
+  box-shadow: 4px 4px 0 rgba(17, 16, 16, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.win-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  padding: 0 6px 0 10px;
+  background: var(--grey-d);
+  color: var(--white);
+  font-family: var(--f-micro);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: move;
+}
+
+.win-close {
+  width: 16px;
+  height: 16px;
+  line-height: 15px;
+  text-align: center;
+  background: var(--grey-m);
+  color: var(--black);
+  cursor: crosshair;
+}
+.win-close:hover { background: #ff6b5e; }
+
+.win-body {
+  padding: 14px;
+  font-family: var(--f-body);
+  font-size: 13px;
+  color: var(--grey-d);
+  line-height: 1.5;
+}
+
+/* Corpo che ospita un'app standalone in iframe: niente padding */
+.win-body.win-app {
+  padding: 0;
+  background: var(--panel);
+}
+.win-body.win-app iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

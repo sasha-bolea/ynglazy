@@ -1,0 +1,66 @@
+{
+  "updated": "2026-06-07T14:08:08.144Z",
+  "projects": [
+    {
+      "name": "#FFFFFF",
+      "type": "album",
+      "date": "2026-03-13",
+      "url": "https://open.spotify.com/album/658biHmHfCpxZBAhyOf8F6",
+      "tracks": [
+        {
+          "name": "<grz>",
+          "ms": 133718,
+          "url": "https://open.spotify.com/track/2QiqQWyhN6EJkmD9yKe3aV"
+        },
+        {
+          "name": "mare",
+          "ms": 168348,
+          "url": "https://open.spotify.com/track/5pCCUb0VwCIFR7ffyhlOWx"
+        },
+        {
+          "name": "987",
+          "ms": 223741,
+          "url": "https://open.spotify.com/track/4UihCMqZ8LZ3EgaeulpdZd"
+        },
+        {
+          "name": "sanguini",
+          "ms": 169495,
+          "url": "https://open.spotify.com/track/47X0Elw50hDXurjfcggfVs"
+        },
+        {
+          "name": "non è un interludio(interludio)",
+          "ms": 252415,
+          "url": "https://open.spotify.com/track/3jDx4C0RoIPFW2LDNBdNhg"
+        },
+        {
+          "name": "cura_)",
+          "ms": 119687,
+          "url": "https://open.spotify.com/track/4CYM7aEsVioKp2QZ2oIVH6"
+        },
+        {
+          "name": "Matematica",
+          "ms": 167191,
+          "url": "https://open.spotify.com/track/4FasIwPeaFlUAEDborcmtp"
+        },
+        {
+          "name": "<\\bestia>",
+          "ms": 222843,
+          "url": "https://open.spotify.com/track/2bTRIQSTiT2CRexGycuZCb"
+        }
+      ]
+    },
+    {
+      "name": "Non c’è pace",
+      "type": "single",
+      "date": "2025-10-31",
+      "url": "https://open.spotify.com/album/3fPoyV85DIW2mqdkY49sNG",
+      "tracks": [
+        {
+          "name": "Non c'è pace",
+          "ms": 152816,
+          "url": "https://open.spotify.com/track/3cKZtd1cI9N5sVMofMFfJS"
+        }
+      ]
+    }
+  ]
+}

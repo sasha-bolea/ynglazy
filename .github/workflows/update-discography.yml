@@ -1,0 +1,38 @@
+name: Update discography
+
+# Aggiorna data/discography.json dalla Spotify API.
+# Schedulato ogni giorno + lanciabile a mano dalla tab Actions.
+on:
+  schedule:
+    - cron: '0 4 * * *'   # ogni giorno alle 04:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # serve per committare il JSON aggiornato
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch discography
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        run: node scripts/fetch-discography.mjs
+
+      - name: Commit se cambia
+        run: |
+          if [ -n "$(git status --porcelain data/discography.json)" ]; then
+            git config user.name  "discography-bot"
+            git config user.email "actions@github.com"
+            git add data/discography.json
+            git commit -m "chore: update discography $(date -u +%Y-%m-%d)"
+            git push
+          else
+            echo "Nessuna modifica."
+          fi
