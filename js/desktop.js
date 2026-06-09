@@ -16,9 +16,9 @@
     { app: 'browser',      glyph: '🌐', label: 'BROWSER',  file: 'apps/browser.html',      w: 640, h: 460 },
     { app: 'tetris',       glyph: '🧱', label: 'TETRIS',   file: 'apps/tetris.html',       w: 460, h: 480 },
     { app: 'synth-7',      glyph: '🎹', label: 'SYNTH-7',  file: 'apps/synth.html',        w: 600, h: 448 },
-    { app: 'terminal',     glyph: '💻', label: 'TERMINAL' },
-    { app: 'about',        glyph: '📄', label: 'ABOUT.EXE'},
-    { app: 'sample-bank',  glyph: '🔊', label: 'SAMPLES'  },
+    { app: 'terminal',     glyph: '💻', label: 'TERMINAL', file: 'apps/terminal.html',    w: 560, h: 380 },
+    { app: 'about',        glyph: '📄', label: 'ABOUT.EXE',file: 'apps/about.html',       w: 540, h: 440 },
+    { app: 'sample-bank',  glyph: '🔊', label: 'SAMPLES',  file: 'apps/sample-bank.html', w: 540, h: 420 },
     { app: 'sys-error',    glyph: '⚠️', label: 'SYS_ERR'  },
     { app: 'trash',        glyph: '🗑️', label: 'CESTINO'  },
   ];

@@ -117,12 +117,13 @@ ynglazy/
 
 | App | File | Stato | Note |
 |-----|------|-------|------|
-| SYNTH-7 | apps/synth-7.html | ⬜ TODO | Da rifare da capo |
-| File Manager | apps/file-manager.html | ⬜ TODO | Canzoni come file .wav → link Spotify |
-| Tetris | apps/tetris.html | ⬜ TODO | Tetris funzionante con musica di lazyyy |
-| Terminale | apps/terminal.html | ⬜ TODO | Comandi fake con easter egg |
-| About.exe | apps/about.html | ⬜ TODO | Bio in formato crash report / BSOD |
-| SampleBank | apps/sample-bank.html | ⬜ TODO | Suoni strani, easter egg audio |
+| SYNTH-7 | apps/synth.html | ✅ FATTO | Pannello scheuomorfico, oscilloscopio, manopole, mobile-ready |
+| File Manager | apps/file-manager.html | ✅ FATTO | Canzoni come file .wav → link Spotify, dati da data/discography.json |
+| Tetris | apps/tetris.html | ✅ FATTO | Touch: pulsanti + gesti swipe. EE-07 incluso |
+| Browser | apps/browser.html | ✅ FATTO | Presave orcd.co + scheda OFFLINE con gioco dino |
+| Terminale | apps/terminal.html | ✅ FATTO | Comandi fake; EE-05 `secret` → drone audio nascosto |
+| About.exe | apps/about.html | ✅ FATTO | Bio in formato crash report con dump progressivo |
+| SampleBank | apps/sample-bank.html | ✅ FATTO | 9 pad Web Audio sintetizzati; pad ??? = easter egg |
 
 ---
 
@@ -134,7 +135,7 @@ ynglazy/
 | EE-02 | Konami Code (↑↑↓↓←→←→BA) | Animazione chaos totale desktop |
 | EE-03 | Doppio click orologio taskbar | Orologio impazzisce |
 | EE-04 | 7 finestre aperte insieme | "TOO MANY WINDOWS" + glitch |
-| EE-05 | Terminale: comando `secret` | Audio nascosto / messaggio |
+| EE-05 ✅ | Terminale: comando `secret` | Drone audio generato + messaggio criptico |
 | EE-06 | Trascina icona nel cestino | "Sei sicuro? [SI] [FORSE] [MAI]" |
 | EE-07 | Tetris score > 1000 | Messaggio personalizzato |
 | EE-08 | Idle 10 min | Screensaver glitch |
@@ -150,12 +151,14 @@ ynglazy/
 - [ ] Desktop base + taskbar
 - [ ] Sistema finestre (drag, close, minimize, z-index)
 
-### Fase 2 — App Core ⬜
-- [ ] SYNTH-7 (da rifare da capo)
-- [ ] File Manager con canzoni → Spotify
-- [ ] Tetris
-- [ ] Terminale
-- [ ] About.exe
+### Fase 2 — App Core ✅
+- [x] SYNTH-7
+- [x] File Manager con canzoni → Spotify
+- [x] Tetris
+- [x] Terminale
+- [x] About.exe
+- [x] SampleBank
+- [x] Browser (presave + dino)
 
 ### Fase 3 — Contenuti ⬜
 - [ ] Inserire canzoni reali con link Spotify

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   TERMINAL — app standalone (iframe). Comandi fake + EE-05.
+   ========================================================= */
+:root{
+  --white:#f0ede8; --grey-l:#c8c3bc; --grey-m:#8a857e; --grey-d:#3a3732;
+  --black:#111010; --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --glow-ph:0 0 4px rgba(212,245,160,.55);
+  --glow-am:0 0 4px rgba(255,204,68,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:#0c0c0b; color:var(--ph);
+  font-family:'Share Tech Mono',monospace; font-size:13px;
+  cursor:crosshair; overflow:hidden;
+  display:flex; flex-direction:column;
+  -webkit-tap-highlight-color:transparent;
+}
+/* scanline leggera su tutto il terminale */
+body::after{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.18) 3px);
+}
+
+#out{
+  flex:1; overflow-y:auto; padding:10px 12px;
+  line-height:1.45; white-space:pre-wrap; word-break:break-word;
+  text-shadow:var(--glow-ph);
+}
+#out .dim{ color:var(--grey-m); text-shadow:none; }
+#out .am{ color:var(--am); text-shadow:var(--glow-am); }
+#out .err{ color:#ff6b5e; text-shadow:0 0 4px rgba(255,107,94,.5); }
+#out a{ color:var(--am); text-shadow:var(--glow-am); }
+
+/* riga input: prompt + campo reale (porta su la tastiera mobile) */
+#in-row{
+  flex-shrink:0; display:flex; align-items:center; gap:6px;
+  padding:6px 12px 8px; border-top:1px solid rgba(138,133,126,.25);
+}
+#in-row .pr{ color:var(--am); text-shadow:var(--glow-am); white-space:nowrap; }
+#cmd{
+  flex:1; min-width:0; background:transparent; border:0; outline:0;
+  color:var(--ph); text-shadow:var(--glow-ph);
+  font-family:'Share Tech Mono',monospace; font-size:13px;
+  caret-color:var(--am); cursor:crosshair;
+}
+
+::-webkit-scrollbar{ width:8px; }
+::-webkit-scrollbar-track{ background:#0c0c0b; }
+::-webkit-scrollbar-thumb{ background:var(--grey-m); border:1px solid var(--black); }
+
+@media (max-width:480px){
+  body{ font-size:12px; }
+  #cmd{ font-size:16px; }   /* <16px su iOS zooma la pagina al focus */
+}
+</style>
+</head>
+<body>
+
+<div id="out"></div>
+<div id="in-row">
+  <span class="pr">lzyyy@LZYYY_SYS:~$</span>
+  <input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+</div>
+
+<script>
+/* =========================================================
+   TERMINAL — interprete comandi fake
+   ========================================================= */
+const SPOTIFY = 'https://open.spotify.com/artist/2YYiyxIraQIGFYQUImQzk0';
+const out = document.getElementById('out');
+const cmd = document.getElementById('cmd');
+
+/* print(html, cls): aggiunge una riga al log e scrolla in fondo */
+function print(html, cls){
+  const d = document.createElement('div');
+  if(cls) d.className = cls;
+  d.innerHTML = html;
+  out.appendChild(d);
+  out.scrollTop = out.scrollHeight;
+}
+/* esc(s): escape HTML dell'input utente */
+function esc(s){
+  return String(s).replace(/[&<>"]/g, (c) =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
+
+/* --- file system finto per ls/cat --- */
+const FILES = {
+  'README.txt':      'ho sampleato un ventilatore per 6 ore. nessun rimpianto.',
+  'todo.txt':        '1. finire l\'album\n2. non finire l\'album\n3. boh',
+  'password.txt':    'bella prova.',
+  'ventilatore.wav': '[stream audio non montato — 6h00m00s]',
+};
+
+/* --- audio nascosto per `secret` (EE-05): drone generato --- */
+let actx = null;
+function playSecretDrone(){
+  if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  actx.resume();
+  const now = actx.currentTime, DUR = 6;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(0.18, now + 1.2);
+  g.gain.linearRampToValueAtTime(0.0001, now + DUR);
+  g.connect(actx.destination);
+  // tre oscillatori leggermente scordati = pad inquietante
+  [55, 55.7, 110.4].forEach((f) => {
+    const o = actx.createOscillator();
+    o.type = 'sawtooth'; o.frequency.value = f;
+    const lp = actx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 320;
+    o.connect(lp); lp.connect(g);
+    o.start(now); o.stop(now + DUR);
+  });
+}
+
+/* --- EE rm -rf: pioggia di errori finti, poi rientro --- */
+function fakeMeltdown(){
+  let n = 0;
+  const t = setInterval(() => {
+    print(`E: settore 0x${(Math.random()*0xFFFF|0).toString(16).padStart(4,'0')} — IL DISCO URLA`, 'err');
+    if(++n >= 14){
+      clearInterval(t);
+      print('&nbsp;');
+      print('scherzavo. niente è stato cancellato.', 'am');
+      print('(il disco però urla davvero)', 'dim');
+    }
+  }, 90);
+}
+
+/* --- tabella comandi: nome → funzione(args) --- */
+const COMMANDS = {
+  help(){
+    print('comandi disponibili:', 'dim');
+    print('  <span class="am">help</span>      questa lista\n' +
+          '  <span class="am">whoami</span>    chi sei\n' +
+          '  <span class="am">ls</span>        elenca file\n' +
+          '  <span class="am">cat</span> &lt;file&gt;  leggi un file\n' +
+          '  <span class="am">play</span>      apri spotify\n' +
+          '  <span class="am">date</span>      data di sistema\n' +
+          '  <span class="am">echo</span> &lt;txt&gt;  ripeti\n' +
+          '  <span class="am">clear</span>     pulisci lo schermo');
+    print('(non è la lista completa)', 'dim');
+  },
+  whoami(){ print('lazyyy. wtf.'); },
+  ls(){ print(Object.keys(FILES).join('\n')); },
+  cat(args){
+    const f = args.join(' ');
+    if(!f) return print('cat: serve un nome file', 'err');
+    if(FILES[f] !== undefined) print(esc(FILES[f]));
+    else print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
+  },
+  play(){
+    print(`▶ apertura spotify… <a href="${SPOTIFY}" target="_blank" rel="noopener">link manuale</a>`);
+    window.open(SPOTIFY, '_blank', 'noopener');
+  },
+  date(){
+    // l'OS è convinto di essere nel 1987
+    const d = new Date();
+    print(`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} · 1987-03-14 <span class="dim">(orologio di sistema non sincronizzato)</span>`);
+  },
+  echo(args){ print(esc(args.join(' ')) || '&nbsp;'); },
+  clear(){ out.innerHTML = ''; },
+  sudo(){ print('no.', 'am'); },
+  exit(){ print('non si esce da LZYYY_SYS.', 'dim'); },
+  /* EE-05: comando segreto → messaggio + audio nascosto */
+  secret(){
+    print('…', 'dim');
+    setTimeout(() => print('0x4C5A5959 — canale nascosto aperto', 'am'), 350);
+    setTimeout(() => {
+      print('questo suono non è mai uscito da questa stanza.');
+      print('ascolta. poi dimentica.', 'dim');
+      playSecretDrone();
+    }, 800);
+  },
+};
+
+/* run(line): parse + dispatch di una riga */
+function run(line){
+  print(`<span class="dim">lzyyy@LZYYY_SYS:~$</span> ${esc(line)}`);
+  const parts = line.trim().split(/\s+/);
+  const name = (parts.shift() || '').toLowerCase();
+  if(!name) return;
+  if(line.trim() === 'rm -rf /') return fakeMeltdown();
+  if(COMMANDS[name]) return COMMANDS[name](parts);
+  print(`comando sconosciuto: ${esc(name)} · prova <span class="am">help</span>`, 'err');
+}
+
+/* input: invio esegue, frecce scorrono la cronologia */
+const history = [];
+let hIdx = -1;
+cmd.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    const line = cmd.value;
+    if(line.trim()){ history.unshift(line); hIdx = -1; }
+    cmd.value = '';
+    run(line);
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    if(hIdx < history.length - 1) cmd.value = history[++hIdx];
+  } else if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    cmd.value = hIdx > 0 ? history[--hIdx] : (hIdx = -1, '');
+  }
+});
+
+/* tap/click ovunque → focus sull'input (apre la tastiera su mobile) */
+document.body.addEventListener('pointerup', () => cmd.focus());
+
+/* benvenuto */
+print('LZYYY_SYS terminal v0.7 — shell instabile', 'dim');
+print('digita <span class="am">help</span> per i comandi.', 'dim');
+print('&nbsp;');
+cmd.focus();
+</script>
+</body>
+</html>
