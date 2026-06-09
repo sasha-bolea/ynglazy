@@ -327,3 +327,88 @@
   height: 100%;
   border: 0;
 }
+
+/* =========================================================
+   Mobile (≤768px) — layout adattato per touch
+   ========================================================= */
+
+@media (max-width: 768px) {
+  /* Banner sistema: nascosto, troppo piccolo */
+  .sys-banner { display: none; }
+
+  /* Icone: griglia a 4 colonne anziché lista verticale */
+  #icon-layer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    padding: 14px 12px 0;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  .desk-icon {
+    width: calc(25% - 8px);
+    padding: 12px 4px;
+    gap: 8px;
+  }
+
+  .desk-icon .glyph { font-size: 34px; }
+  .desk-icon .label { font-size: 10px; }
+
+  /* Launcher taskbar: nascosto — le app stanno sul desktop */
+  #tb-launch { display: none; }
+
+  /* Lista finestre aperte: nascosta — HOME è il modo per tornare */
+  #tb-tasks { display: none; }
+
+  /* HOME button */
+  .tb-start.tb-home {
+    color: var(--am);
+    text-shadow: var(--glow-am);
+    letter-spacing: 2px;
+    min-width: 80px;
+    justify-content: center;
+  }
+
+  /* Finestre: fullscreen sopra il desktop */
+  .win {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: calc(100vh - var(--taskbar-h)) !important;
+    min-width: unset !important;
+    box-shadow: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+  }
+
+  /* Corpo finestra: riempie lo spazio rimanente sotto la titlebar */
+  .win-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Iframe app: occupa tutta l'altezza disponibile */
+  .win-body.win-app {
+    height: auto !important;
+  }
+
+  /* Titlebar non trascinabile su touch */
+  .win-title { cursor: default; }
+
+  /* Popup antivirus: full width su mobile */
+  .av-popup {
+    left: 0;
+    right: 0;
+    width: 100%;
+    bottom: var(--taskbar-h);
+  }
+
+  /* Pulsante purge centrato in basso */
+  .virus-purge {
+    width: 90%;
+    text-align: center;
+  }
+}

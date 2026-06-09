@@ -25,6 +25,8 @@
 
   let winZ = 100;   // z-index incrementale finestre
 
+  const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
   /* Snapshot di fallback per le icone progetto se il fetch fallisce */
   const FALLBACK_PROJECTS = [
     { name: '#FFFFFF', type: 'album' },
@@ -37,12 +39,21 @@
      ----------------------------------------------------------- */
   function buildIcons() {
     const layer = document.getElementById('icon-layer');
-    layer.addEventListener('click', onIconSingleClick);
-    layer.addEventListener('dblclick', onIconOpen);
 
-    // Icona Cestino (apre il File Manager nella cartella Cestino)
-    const trash = ICONS.find((i) => i.app === 'trash');
-    layer.appendChild(makeIcon({ glyph: trash.glyph, label: trash.label, attr: { app: 'trash' } }));
+    if (isMobile()) {
+      // Su mobile: tap singolo apre direttamente l'app
+      layer.addEventListener('click', onIconOpen);
+      // Tutte le app sul desktop (taskbar nascosta su mobile)
+      ICONS.forEach((ic) => {
+        layer.appendChild(makeIcon({ glyph: ic.glyph, label: ic.label, attr: { app: ic.app } }));
+      });
+    } else {
+      layer.addEventListener('click', onIconSingleClick);
+      layer.addEventListener('dblclick', onIconOpen);
+      // Desktop: solo il Cestino (le altre app stanno nella taskbar)
+      const trash = ICONS.find((i) => i.app === 'trash');
+      layer.appendChild(makeIcon({ glyph: trash.glyph, label: trash.label, attr: { app: 'trash' } }));
+    }
   }
 
   /* makeIcon(opt): crea un nodo icona desktop */
@@ -76,6 +87,7 @@
      pulsanti nella taskbar. Click singolo = apri.
      ----------------------------------------------------------- */
   function buildLaunchers() {
+    if (isMobile()) return; // app già sul desktop su mobile
     const bar = document.getElementById('tb-launch');
     ICONS.filter((ic) => ic.app !== 'trash').forEach((ic) => {
       const b = document.createElement('div');
@@ -154,10 +166,12 @@
     const win = document.createElement('div');
     win.className = 'win';
     win.dataset.app = def.app;
-    win.style.width = (def.w || 520) + 'px';
-    win.style.left = (90 + Math.random() * 80) + 'px';
-    win.style.top  = (60 + Math.random() * 60) + 'px';
     win.style.zIndex = ++winZ;
+    if (!isMobile()) {
+      win.style.width = (def.w || 520) + 'px';
+      win.style.left = (90 + Math.random() * 80) + 'px';
+      win.style.top  = (60 + Math.random() * 60) + 'px';
+    }
 
     win.innerHTML =
       `<div class="win-title">` +
@@ -169,13 +183,13 @@
       `</div>`;
 
     const body = win.querySelector('.win-app');
-    body.style.height = (def.h || 360) + 'px';
+    if (!isMobile()) body.style.height = (def.h || 360) + 'px';
 
     document.getElementById('desktop').appendChild(win);
 
     win.addEventListener('mousedown', () => { win.style.zIndex = ++winZ; });
     win.querySelector('.win-close').addEventListener('click', () => win.remove());
-    makeDraggable(win, win.querySelector('.win-title'));
+    if (!isMobile()) makeDraggable(win, win.querySelector('.win-title'));
   }
 
   /* -----------------------------------------------------------
@@ -185,9 +199,11 @@
   function openPlaceholderWindow(def) {
     const win = document.createElement('div');
     win.className = 'win';
-    win.style.left = (60 + Math.random() * 120) + 'px';
-    win.style.top  = (70 + Math.random() * 90) + 'px';
     win.style.zIndex = ++winZ;
+    if (!isMobile()) {
+      win.style.left = (60 + Math.random() * 120) + 'px';
+      win.style.top  = (70 + Math.random() * 90) + 'px';
+    }
 
     win.innerHTML =
       `<div class="win-title">` +
@@ -201,12 +217,9 @@
 
     document.getElementById('desktop').appendChild(win);
 
-    // Porta in primo piano al click
     win.addEventListener('mousedown', () => { win.style.zIndex = ++winZ; });
-    // Chiusura
     win.querySelector('.win-close').addEventListener('click', () => win.remove());
-    // Drag dalla titlebar
-    makeDraggable(win, win.querySelector('.win-title'));
+    if (!isMobile()) makeDraggable(win, win.querySelector('.win-title'));
   }
 
   /* -----------------------------------------------------------
@@ -248,6 +261,24 @@
   }
 
   /* -----------------------------------------------------------
+     setupHomeButton(): su mobile trasforma START in HOME.
+     Click su HOME chiude la finestra in primo piano (torna al
+     desktop); se non ci sono finestre aperte non fa nulla.
+     ----------------------------------------------------------- */
+  function setupHomeButton() {
+    if (!isMobile()) return;
+    const btn = document.querySelector('.tb-start');
+    btn.textContent = '⌂ HOME';
+    btn.classList.add('tb-home');
+    btn.addEventListener('click', () => {
+      const wins = [...document.querySelectorAll('.win')];
+      if (!wins.length) return;
+      wins.sort((a, b) => (parseInt(b.style.zIndex) || 0) - (parseInt(a.style.zIndex) || 0));
+      wins[0].remove();
+    });
+  }
+
+  /* -----------------------------------------------------------
      startClock(): orologio reale nella taskbar (HH:MM:SS)
      ----------------------------------------------------------- */
   function startClock() {
@@ -280,9 +311,10 @@
     buildProjectIcons(FALLBACK_PROJECTS);   // icone immediate
     loadProjectIcons();                      // poi aggiorna dai dati vivi
     startClock();
+    setupHomeButton();
     document.getElementById('desktop').addEventListener('click', deselectOnVoid);
-    // All'avvio apre il Browser con la scheda PRE-SAVE già davanti
-    openApp(ICONS.find((i) => i.app === 'browser'));
+    // All'avvio apre il Browser (solo su desktop — su mobile l'utente sceglie dall'icona)
+    if (!isMobile()) openApp(ICONS.find((i) => i.app === 'browser'));
   }
 
   /* -----------------------------------------------------------
