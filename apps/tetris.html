@@ -34,7 +34,7 @@ body{
     radial-gradient(ellipse at 50% 0%, rgba(212,245,160,.06), transparent 60%),
     #0d0d0c;
 }
-#tt-board{ border:1px solid var(--grey-m); background:#0a0a09; box-shadow:0 0 16px rgba(212,245,160,.12); }
+#tt-board{ border:1px solid var(--grey-m); background:#0a0a09; box-shadow:0 0 16px rgba(212,245,160,.12); touch-action:none; }
 
 /* Overlay messaggi (pausa / game over / easter egg) */
 .tt-overlay{
@@ -73,6 +73,7 @@ body{
 
 /* Controlli touch: nascosti su desktop, visibili con puntatore grossolano */
 .tt-touch{ display:none; }
+.tt-ges{ display:none; }
 @media (pointer:coarse){
   .tt-touch{
     display:grid; grid-template-columns:repeat(6,1fr); gap:6px;
@@ -87,6 +88,11 @@ body{
     touch-action:manipulation;
   }
   .tt-touch button:active{ background:rgba(212,245,160,.18); }
+  .tt-ges{
+    display:block; grid-column:1/-1; text-align:center;
+    font-family:'Share Tech Mono',monospace; font-size:10px;
+    color:var(--grey-m); letter-spacing:1px;
+  }
 }
 
 /* Mobile: layout in colonna (board sopra, controlli, pannello sotto).
@@ -120,6 +126,7 @@ body{
   <button data-a="rot" title="ruota">⟳</button>
   <button data-a="drop" title="hard drop">⤓</button>
   <button data-a="pause" title="pausa">▮▮</button>
+  <span class="tt-ges">trascina = muovi · tap = ruota · flick giù = drop</span>
 </div>
 
 <div class="tt-side">
@@ -379,6 +386,39 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
+
+/* Gesti sul campo: drag orizzontale = sposta (una colonna ogni CELL px),
+   drag verticale = soft drop, flick rapido in giù = hard drop, tap = ruota */
+let ges = null;   // stato del gesto in corso
+board.addEventListener('pointerdown', (e) => {
+  if(paused || over) return;
+  e.preventDefault();
+  board.setPointerCapture(e.pointerId);
+  ges = { x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, t0:performance.now() };
+});
+board.addEventListener('pointermove', (e) => {
+  if(!ges || paused || over) return;
+  // orizzontale: scatta di una colonna ogni CELL px trascinati
+  while(e.clientX - ges.x >= CELL){ move(1);  ges.x += CELL; }
+  while(ges.x - e.clientX >= CELL){ move(-1); ges.x -= CELL; }
+  // verticale: soft drop, una riga ogni CELL px
+  let dropped = false;
+  while(e.clientY - ges.y >= CELL){ step(); score += 1; ges.y += CELL; dropped = true; }
+  if(dropped) updateHUD();
+  draw();
+});
+board.addEventListener('pointerup', (e) => {
+  if(!ges) return;
+  const dt = performance.now() - ges.t0;
+  const dx = e.clientX - ges.x0, dy = e.clientY - ges.y0;
+  ges = null;
+  if(paused || over) return;
+  // tocco secco senza spostamento = ruota
+  if(dt < 250 && Math.abs(dx) < 12 && Math.abs(dy) < 12){ tryRotate(); draw(); return; }
+  // flick veloce verso il basso = hard drop
+  if(dt < 220 && dy > 60 && dy > Math.abs(dx)*2){ hardDrop(); draw(); }
+});
+board.addEventListener('pointercancel', () => { ges = null; });
 
 /* input touch: pulsanti su schermo (visibili solo con pointer:coarse) */
 document.getElementById('tt-touch').addEventListener('pointerdown', (e) => {
