@@ -26,6 +26,7 @@ body{
   cursor:crosshair; user-select:none; overflow:hidden;
   display:flex; flex-direction:column; position:relative;
   background:#141210;
+  -webkit-tap-highlight-color:transparent;
 }
 /* sfondo hex (Lain), molto debole */
 #sy-hex{
@@ -98,7 +99,7 @@ body{
 
 /* interruttori a levetta */
 .switches{ display:flex; gap:8px; }
-.sw{ display:flex; flex-direction:column; align-items:center; gap:4px; cursor:crosshair; width:40px; }
+.sw{ display:flex; flex-direction:column; align-items:center; gap:4px; cursor:crosshair; width:40px; touch-action:none; }
 .sw .led{ width:7px; height:7px; border-radius:50%; background:#2a2a26; box-shadow:inset 0 0 2px #000; }
 .sw.on .led{ background:var(--ph); box-shadow:0 0 6px var(--ph); }
 .sw .track{ width:18px; height:30px; background:linear-gradient(#0c0b0a,#1a1714); border:1px solid #000;
@@ -116,7 +117,7 @@ body{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
 .knob{ display:flex; flex-direction:column; align-items:center; gap:4px; width:58px; }
 .knob .cap{ font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:1px; color:var(--grey-m); }
-.knob .dial{ width:42px; height:42px; border-radius:50%; position:relative; cursor:crosshair;
+.knob .dial{ width:42px; height:42px; border-radius:50%; position:relative; cursor:crosshair; touch-action:none;
   background:radial-gradient(circle at 38% 32%, #4a463f, #211e1b 72%);
   border:2px solid #000; box-shadow:inset 0 2px 3px rgba(255,255,255,.08), inset 0 -3px 4px rgba(0,0,0,.6), 0 2px 3px rgba(0,0,0,.5); }
 .knob .dial .ind{ position:absolute; left:50%; top:5px; width:2px; height:13px; margin-left:-1px;
@@ -125,7 +126,7 @@ body{
 
 /* tastiera pixel-art */
 .sy-kb-wrap{ display:flex; align-items:center; justify-content:center; padding:6px 4px 2px; }
-.sy-kb{ position:relative; height:120px; }
+.sy-kb{ position:relative; height:120px; touch-action:none; }
 .wkey{ position:relative; float:left; width:34px; height:120px;
   background:linear-gradient(#e8e4dc,#cfc9c0 70%,#b9b3aa);
   border:2px solid #0a0a09; border-top-width:3px;
@@ -145,6 +146,23 @@ body{
 .sy-foot{ position:relative; z-index:1; padding:3px 14px; background:#0f0e0c; border-top:1px solid var(--grey-m);
   font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--grey-m); }
 .sy-foot b{ color:var(--grey-l); }
+
+/* Mobile: controlli impilati, manopole a capo, schermi compatti */
+@media (max-width:480px){
+  body{ overflow-y:auto; }
+  .sy-rack{ margin:5px; padding:8px; gap:8px; }
+  .nixie{ width:118px; }
+  #sy-scope{ height:64px; }
+  .sy-controls{ flex-direction:column; gap:8px; }
+  .switches{ justify-content:space-around; }
+  .knobs{ flex-wrap:wrap; gap:6px; justify-content:center; }
+  .knob{ width:30%; }
+  .sy-foot{ padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+}
+/* Touch: il suggerimento tastiera PC non ha senso */
+@media (pointer:coarse){
+  .pc-hint{ display:none; }
+}
 </style>
 </head>
 <body>
@@ -184,13 +202,15 @@ body{
   <div class="sy-kb-wrap"><div class="sy-kb" id="sy-kb"></div></div>
 </div>
 
-<div class="sy-foot">tastiera PC: <b>A W S E D F T G Y H U J K</b> · click/drag sui tasti · trascina le manopole (doppio-click = reset)</div>
+<div class="sy-foot"><span class="pc-hint">tastiera PC: <b>A W S E D F T G Y H U J K</b> · </span>tocca/trascina i tasti · trascina le manopole<span class="pc-hint"> (doppio-click = reset)</span></div>
 
 <script>
 /* =========================================================
    SYNTH — Web Audio + oscilloscopio + manopole + tastiera
    ========================================================= */
-const WW = 34, BW = 20, OCTAVES = 2;
+/* WW/BW ricalcolati da buildKeyboard() in base allo spazio disponibile */
+let WW = 34, BW = 20;
+const OCTAVES = 2;
 const WHITE = [ {n:'C',s:0},{n:'D',s:2},{n:'E',s:4},{n:'F',s:5},{n:'G',s:7},{n:'A',s:9},{n:'B',s:11} ];
 const BLACK = [ {n:'C#',s:1,after:0},{n:'D#',s:3,after:1},{n:'F#',s:6,after:3},{n:'G#',s:8,after:4},{n:'A#',s:10,after:5} ];
 const KEYMAP = { a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15 };
@@ -255,28 +275,61 @@ function showNote(name){
   document.getElementById('nx1').textContent = name.replace('#','').slice(1);
 }
 
-/* tastiera pixel-art */
+/* tastiera pixel-art — larghezza tasti adattiva al contenitore */
 function buildKeyboard(){
+  // 14 tasti bianchi devono stare nello spazio del wrap (min 18px, max 34px)
+  const avail = kbEl.parentElement.clientWidth || OCTAVES*7*34;
+  WW = Math.max(18, Math.min(34, Math.floor(avail/(OCTAVES*7))));
+  BW = Math.max(11, Math.round(WW*0.58));
   kbEl.innerHTML=''; let wc=0;
   for(let oct=0;oct<OCTAVES;oct++){
     WHITE.forEach((w)=>{ const semi=oct*12+w.s; const k=document.createElement('div');
-      k.className='wkey'; k.dataset.semi=semi;
+      k.className='wkey'; k.dataset.semi=semi; k.style.width=WW+'px';
       k.innerHTML=`<span class="kl">${w.n==='C'?'C'+(4+oct+octaveShift):''}</span>`;
       attachKey(k,semi); kbEl.appendChild(k); wc++; });
     BLACK.forEach((b)=>{ const semi=oct*12+b.s; const k=document.createElement('div');
-      k.className='bkey'; k.dataset.semi=semi;
+      k.className='bkey'; k.dataset.semi=semi; k.style.width=BW+'px';
       k.style.left=((oct*7+b.after+1)*WW - BW/2)+'px';
       attachKey(k,semi); kbEl.appendChild(k); });
   }
   kbEl.style.width=(wc*WW)+'px';
 }
+/* Ricostruisce la tastiera quando il contenitore cambia larghezza (debounce) */
+let kbResizeT=null;
+new ResizeObserver(()=>{
+  clearTimeout(kbResizeT);
+  kbResizeT=setTimeout(()=>{
+    const avail=kbEl.parentElement.clientWidth || OCTAVES*7*34;
+    const nw=Math.max(18, Math.min(34, Math.floor(avail/(OCTAVES*7))));
+    if(nw!==WW) buildKeyboard();
+  },120);
+}).observe(kbEl.parentElement || document.body);
 function attachKey(el,semi){
-  el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); mouseDown=true; noteOn(semi); });
+  el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); mouseDown=true; noteOn(semi);
+    // touch cattura implicitamente il pointer: rilascia per permettere il glissando
+    try{ el.releasePointerCapture(e.pointerId); }catch(_){}
+  });
   el.addEventListener('pointerenter',()=>{ if(mouseDown) noteOn(semi); });
   el.addEventListener('pointerup',()=>noteOff(semi));
   el.addEventListener('pointerleave',()=>{ if(mouseDown) noteOff(semi); });
+  el.addEventListener('pointercancel',()=>noteOff(semi));   // touch interrotto dal browser
 }
 window.addEventListener('pointerup',()=>{ mouseDown=false; });
+
+/* Sblocco audio mobile: i browser touch tengono l'AudioContext "suspended"
+   finché resume() non avviene dentro un gesto completo (touchend/pointerup).
+   Resta in ascolto finché il contesto non è davvero "running". */
+function unlockAudio(){
+  ensureAudio();
+  actx.resume().then(()=>{
+    if(actx.state==='running'){
+      window.removeEventListener('touchend', unlockAudio);
+      window.removeEventListener('pointerup', unlockAudio);
+    }
+  }).catch(()=>{});
+}
+window.addEventListener('touchend', unlockAudio);
+window.addEventListener('pointerup', unlockAudio);
 
 /* levette waveform */
 document.getElementById('sy-waves').addEventListener('click',(e)=>{

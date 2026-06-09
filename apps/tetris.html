@@ -25,6 +25,7 @@ body{
   font-family:'IBM Plex Mono',monospace; font-size:13px;
   cursor:crosshair; user-select:none; overflow:hidden;
   display:flex; min-height:0;
+  -webkit-tap-highlight-color:transparent;
 }
 .tt-stage{
   flex-shrink:0; padding:12px; position:relative;
@@ -73,6 +74,33 @@ body{
 .tt-music .lbl{ font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m); margin-bottom:5px; letter-spacing:1px; }
 .tt-music iframe{ border:0; width:100%; border-radius:0; }
 
+/* Controlli touch: nascosti su desktop, visibili con puntatore grossolano */
+.tt-touch{ display:none; }
+@media (pointer:coarse){
+  .tt-touch{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:6px;
+    flex-shrink:0; padding:8px 10px;
+    background:#0f0e0c; border-top:1px solid var(--grey-m);
+  }
+  .tt-touch button{
+    height:44px; font-size:18px; line-height:1;
+    font-family:'Share Tech Mono',monospace;
+    color:var(--ph); background:#161512;
+    border:1px solid var(--grey-m); cursor:crosshair;
+    touch-action:manipulation;
+  }
+  .tt-touch button:active{ background:rgba(212,245,160,.18); }
+}
+
+/* Mobile: layout in colonna (board sopra, controlli, pannello sotto).
+   440px: sotto la finestra desktop da 460px, sopra i telefoni (~430px max) */
+@media (max-width:440px){
+  body{ flex-direction:column; overflow-y:auto; }
+  .tt-stage{ padding:10px; }
+  .tt-side{ border-left:none; border-top:1px solid var(--grey-m); }
+  .tt-keys{ display:none; }   /* scorciatoie tastiera inutili su touch */
+}
+
 ::-webkit-scrollbar{ width:8px; }
 ::-webkit-scrollbar-track{ background:var(--panel); }
 ::-webkit-scrollbar-thumb{ background:var(--grey-m); border:1px solid var(--black); }
@@ -86,6 +114,15 @@ body{
     <div class="big" id="tt-ov-big">PAUSA</div>
     <div class="sub" id="tt-ov-sub"></div>
   </div>
+</div>
+
+<div class="tt-touch" id="tt-touch">
+  <button data-a="left" title="sinistra">◄</button>
+  <button data-a="down" title="soft drop">▼</button>
+  <button data-a="right" title="destra">►</button>
+  <button data-a="rot" title="ruota">⟳</button>
+  <button data-a="drop" title="hard drop">⤓</button>
+  <button data-a="pause" title="pausa">▮▮</button>
 </div>
 
 <div class="tt-side">
@@ -309,7 +346,7 @@ function checkEE7(){
   if(!ee7Shown && score > 1000){
     ee7Shown = true;
     showOverlay('987.',
-      'hai superato 1000.<br>lazyyy ne ha fatti di numeri.<br><span class="key">P</span> per continuare');
+      'hai superato 1000.<br>lazyyy ne ha fatti di numeri.<br><span class="key">P</span> o tocca per continuare');
     paused = true;
   }
 }
@@ -321,14 +358,14 @@ function hideOverlay(){ overlay.classList.remove('show'); }
 /* gameOver(): fine partita */
 function gameOver(){
   over = true; paused = true;
-  showOverlay('GAME OVER', `score <span class="key">${score}</span><br><span class="key">R</span> per ricominciare`);
+  showOverlay('GAME OVER', `score <span class="key">${score}</span><br><span class="key">R</span> o tocca per ricominciare`);
 }
 
 /* togglePause() */
 function togglePause(){
   if(over) return;
   paused = !paused;
-  if(paused){ showOverlay('PAUSA','<span class="key">P</span> per riprendere'); }
+  if(paused){ showOverlay('PAUSA','<span class="key">P</span> o tocca per riprendere'); }
   else { hideOverlay(); lastDrop = performance.now(); }
 }
 
@@ -350,6 +387,28 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
+
+/* input touch: pulsanti su schermo (visibili solo con pointer:coarse) */
+document.getElementById('tt-touch').addEventListener('pointerdown', (e) => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  e.preventDefault();
+  const a = b.dataset.a;
+  if(a === 'pause'){ togglePause(); return; }
+  if(paused || over) return;
+  if(a === 'left') move(-1);
+  else if(a === 'right') move(1);
+  else if(a === 'down'){ step(); score += 1; updateHUD(); }
+  else if(a === 'rot') tryRotate();
+  else if(a === 'drop') hardDrop();
+  draw();
+});
+
+/* tap sull'overlay: riprende dalla pausa o ricomincia dopo il game over */
+overlay.addEventListener('pointerdown', () => {
+  if(over) reset();
+  else togglePause();
+});
 
 /* input da tastiera */
 window.addEventListener('keydown', (e) => {

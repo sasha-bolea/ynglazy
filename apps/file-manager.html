@@ -26,6 +26,7 @@ body{
   font-family:'IBM Plex Mono',monospace; font-size:13px;
   cursor:crosshair; user-select:none; overflow:hidden;
   display:flex; flex-direction:column;
+  -webkit-tap-highlight-color:transparent;
 }
 .fm-toolbar{
   display:flex; align-items:center; gap:10px;
@@ -95,6 +96,15 @@ body{
 }
 .fm-status .warn{ color:var(--am); text-shadow:var(--glow-am); }
 
+/* Mobile: albero nascosto (si naviga da lista + ".."), niente colonna DATA,
+   righe più alte per il tocco */
+@media (max-width:480px){
+  .fm-tree{ display:none; }
+  .fm-row{ grid-template-columns:1fr 64px 28px; gap:6px; padding:8px 10px; }
+  .fm-row > span:nth-child(3){ display:none; }
+  .fm-toolbar .up{ padding:2px 10px; }
+}
+
 ::-webkit-scrollbar{ width:8px; height:8px; }
 ::-webkit-scrollbar-track{ background:var(--panel); }
 ::-webkit-scrollbar-thumb{ background:var(--grey-m); border:1px solid var(--black); }
@@ -141,6 +151,9 @@ let PROJECTS = [
 
 let TREE = [];      // albero corrente
 let path = [];      // percorso corrente (array di nomi), [] = radice
+
+/* Touch: tap singolo apre (niente doppio click su mobile) */
+const COARSE = window.matchMedia('(pointer:coarse)').matches;
 
 const ICON = { folder:'▸', project:'💿', song:'♪', file:'▤', img:'▢', video:'▷', sample:'◈', corrupt:'⚠' };
 
@@ -250,7 +263,7 @@ function renderList(){
       `<span class="col">${esc(m.c1)}</span>` +
       `<span class="col">${esc(m.c2)}</span>` +
       `<span class="go">${m.go}</span>`;
-    el.onclick = () => selectRow(el);
+    el.onclick = () => { selectRow(el); if(COARSE) activate(node); };
     el.ondblclick = () => activate(node);
     listEl.appendChild(el);
   });
@@ -334,7 +347,8 @@ async function loadDiscography(){
 /* Avvio: costruisci albero, applica eventuale percorso da query, render */
 buildTree();
 const initPath = location.hash ? location.hash.slice(1) : '';
-if(initPath) navFromString(initPath); else go(['Documenti']);  // default: Documenti
+// default: radice su touch (albero nascosto), Documenti su desktop
+if(initPath) navFromString(initPath); else go(COARSE ? [] : ['Documenti']);
 loadDiscography();
 </script>
 </body>

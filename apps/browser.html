@@ -26,6 +26,7 @@ body{
   font-family:'IBM Plex Mono',monospace; font-size:13px;
   cursor:crosshair; user-select:none; overflow:hidden;
   display:flex; flex-direction:column;
+  -webkit-tap-highlight-color:transparent;
 }
 
 /* Barra schede */
@@ -92,7 +93,7 @@ body{
 }
 .dino-cv{
   width:min(640px,94%); height:180px; display:block;
-  image-rendering:pixelated; cursor:crosshair;
+  image-rendering:pixelated; cursor:crosshair; touch-action:none;
   border:1px solid var(--grey-m); background:#0d0d0c;
 }
 .dino-bar{
@@ -153,6 +154,15 @@ body{
   font-size:11px; color:var(--grey-m); max-width:340px; line-height:1.5;
 }
 .ps .warn{ color:var(--am); }
+
+/* Mobile: schede scorrevoli, landing presave compatta */
+@media (max-width:480px){
+  .bw-tabs{ overflow-x:auto; }
+  .ps{ padding:28px 16px; }
+  .ps h1{ font-size:46px; }
+  .ps .cover{ width:130px; height:130px; }
+  .dino-head .t{ font-size:32px; }
+}
 
 ::-webkit-scrollbar{ width:8px; height:8px; }
 ::-webkit-scrollbar-track{ background:var(--panel); }
@@ -345,7 +355,8 @@ function startDino(container){
     if(e.code === 'Space' || e.code === 'ArrowUp' || e.key === ' '){ e.preventDefault(); jump(); }
   }
   window.addEventListener('keydown', onKey);
-  cv.addEventListener('mousedown', jump);
+  // pointerdown copre mouse e touch
+  cv.addEventListener('pointerdown', (e) => { e.preventDefault(); jump(); });
 
   /* spawn(): genera un cactus a destra */
   function spawn(){
