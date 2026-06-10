@@ -122,8 +122,8 @@ ynglazy/
 | Tetris | apps/tetris.html | ✅ FATTO | Touch: pulsanti + gesti swipe. EE-07 incluso |
 | Browser | apps/browser.html | ✅ FATTO | Presave orcd.co + scheda OFFLINE con gioco dino |
 | Terminale | apps/terminal.html | ✅ FATTO | Comandi fake; EE-05 `secret` → drone audio nascosto |
-| About.exe | apps/about.html | ✅ FATTO | Bio in formato crash report con dump progressivo |
-| SampleBank | apps/sample-bank.html | ✅ FATTO | 9 pad Web Audio sintetizzati; pad ??? = easter egg |
+| About.exe | — | ❌ RIMOSSA | Fatta e poi tolta su richiesta (2026-06-10) |
+| SampleBank | — | ❌ RIMOSSA | Fatta e poi tolta su richiesta (2026-06-10) |
 
 ---
 
@@ -156,9 +156,8 @@ ynglazy/
 - [x] File Manager con canzoni → Spotify
 - [x] Tetris
 - [x] Terminale
-- [x] About.exe
-- [x] SampleBank
 - [x] Browser (presave + dino)
+- ~~About.exe~~ / ~~SampleBank~~ — rimosse su richiesta
 
 ### Fase 3 — Contenuti ⬜
 - [ ] Inserire canzoni reali con link Spotify
