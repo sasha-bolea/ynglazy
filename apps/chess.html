@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHESS</title>
+<style>
+/* =========================================================
+   CHESS — Macintosh System 6/7, 1-bit. Solo #FFFFFF e #000000.
+   Scacchiera isometrica su canvas a bassa risoluzione (288x190)
+   upscalata con image-rendering:pixelated. Dithering disegnato
+   a mano pixel per pixel (niente grigi CSS).
+   ========================================================= */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:#fff; color:#000;
+  font-family:'Monaco','Courier New',monospace; font-size:12px;
+  user-select:none; overflow:hidden;
+  display:flex; flex-direction:column;
+  -webkit-tap-highlight-color:transparent;
+  /* freccia nera classica del Mac, bordo bianco */
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='18'%3E%3Cpath d='M1 1L1 14L4.5 11L7 17L9.5 16L7 10L11 10Z' fill='black' stroke='white'/%3E%3C/svg%3E") 1 1, default;
+}
+
+/* sfondo "scrivania" Mac: dithering 50% */
+.mac-desk{
+  flex:1; min-height:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:8px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='2' height='2' fill='white'/%3E%3Crect width='1' height='1' fill='black'/%3E%3Crect x='1' y='1' width='1' height='1' fill='black'/%3E%3C/svg%3E");
+  image-rendering:pixelated;
+}
+
+/* barra menu in alto */
+.mac-menubar{
+  flex-shrink:0; display:flex; align-items:center; gap:0;
+  height:20px; padding:0 4px;
+  background:#fff; border-bottom:1px solid #000;
+  font-size:12px; position:relative; z-index:20;
+}
+.mac-menubar .mi{ padding:2px 9px; white-space:nowrap; }
+.mac-menubar .mi.open{ background:#000; color:#fff; }
+
+/* dropdown menu */
+#dd{
+  position:fixed; display:none; z-index:30; min-width:150px;
+  background:#fff; border:1px solid #000;
+  box-shadow:2px 2px 0 #000;
+}
+#dd .it{ padding:3px 18px 3px 22px; white-space:nowrap; position:relative; }
+#dd .it:hover{ background:#000; color:#fff; }
+#dd .it.check::before{ content:'✓'; position:absolute; left:6px; }
+#dd .sep{ border-top:1px dotted #000; margin:2px 0; }
+
+/* finestra System 6/7 */
+.mac-win{
+  background:#fff; border:1px solid #000;
+  box-shadow:2px 2px 0 #000;
+  width:min(100%, 600px);
+}
+/* barra titolo a righe orizzontali + closebox a sinistra */
+.mac-title{
+  height:18px; display:flex; align-items:center;
+  border-bottom:1px solid #000; padding:0 4px; position:relative;
+  background-image:repeating-linear-gradient(to bottom,
+    #fff 0 2px, #000 2px 3px, #fff 3px 4px, #000 4px 5px,
+    #fff 5px 6px, #000 6px 7px, #fff 7px 8px, #000 8px 9px,
+    #fff 9px 10px, #000 10px 11px, #fff 11px 12px, #000 12px 13px,
+    #fff 13px 14px, #000 14px 15px, #fff 15px 16px, #000 16px 18px);
+}
+.mac-title .closebox{
+  width:11px; height:11px; background:#fff; border:1px solid #000;
+  flex-shrink:0;
+}
+.mac-title .closebox:active{ background:#000; }
+.mac-title .t{
+  margin:0 auto; padding:0 10px; background:#fff;
+  font-size:12px; letter-spacing:1px;
+}
+
+#cv{ display:block; width:100%; image-rendering:pixelated; }
+
+/* barra stato della finestra */
+.mac-status{
+  border-top:1px solid #000; padding:3px 8px;
+  font-size:11px; letter-spacing:1px; display:flex; justify-content:space-between;
+}
+
+/* dialog modale stile Mac */
+#dlg-wrap{
+  position:fixed; inset:0; display:none; z-index:40;
+  align-items:center; justify-content:center;
+}
+#dlg{
+  background:#fff; border:2px solid #000; box-shadow:3px 3px 0 #000;
+  min-width:230px; max-width:85%; padding:14px 16px 12px;
+  text-align:center;
+}
+#dlg .dt{ font-size:13px; margin-bottom:8px; letter-spacing:1px; }
+#dlg .db{ font-size:11px; line-height:1.6; margin-bottom:12px; white-space:pre-line; }
+#dlg button{
+  font-family:inherit; font-size:12px; padding:3px 22px;
+  background:#fff; color:#000; border:2px solid #000; border-radius:8px;
+  cursor:inherit;
+}
+#dlg button:active{ background:#000; color:#fff; }
+
+@media (max-width:480px){
+  .mac-menubar{ font-size:11px; }
+  .mac-menubar .mi{ padding:2px 6px; }
+  .mac-desk{ padding:4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="mac-menubar" id="menubar">
+  <span class="mi" data-m="apple"></span>
+  <span class="mi" data-m="file">File</span>
+  <span class="mi" data-m="edit">Edit</span>
+  <span class="mi" data-m="move">Move</span>
+  <span class="mi" data-m="settings">Settings</span>
+  <span class="mi" data-m="level">Level</span>
+</div>
+<div id="dd"></div>
+
+<div class="mac-desk">
+  <div class="mac-win">
+    <div class="mac-title"><span class="closebox" id="closebox"></span><span class="t">Chess</span></div>
+    <canvas id="cv" width="288" height="190"></canvas>
+    <div class="mac-status"><span id="st-msg">WHITE TO MOVE</span><span id="st-lvl">LEVEL: NORMAL</span></div>
+  </div>
+</div>
+
+<div id="dlg-wrap"><div id="dlg">
+  <div class="dt" id="dlg-t"></div>
+  <div class="db" id="dlg-b"></div>
+  <button id="dlg-ok">OK</button>
+</div></div>
+
+<script>
+/* =========================================================
+   MOTORE SCACCHI — scacchiera array 64, indice 0 = a8.
+   Maiuscole = bianco (in basso, umano), minuscole = nero (CPU).
+   Mosse legali complete: arrocco, en passant, promozione.
+   ========================================================= */
+const W8 = 8;
+let board, turn, castle, ep, history, gameOver;
+
+/* idx/r/c helpers */
+const RC = (i) => [i >> 3, i & 7];
+const IX = (r, c) => r * 8 + c;
+const ON = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+const colorOf = (p) => p === p.toUpperCase() ? 'w' : 'b';
+
+/* initGame(): posizione iniziale + stato azzerato */
+function initGame(){
+  board = ('rnbqkbnr' + 'pppppppp' + '        '.repeat(4) +
+           'PPPPPPPP' + 'RNBQKBNR').split('').map((c) => c === ' ' ? '' : c);
+  turn = 'w';
+  castle = { wK:true, wQ:true, bK:true, bQ:true };
+  ep = null;
+  history = [];
+  gameOver = false;
+  sel = null; targets = [];
+}
+
+const KN   = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+const KADJ = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const ORTH = [[-1,0],[1,0],[0,-1],[0,1]];
+const DIAG = [[-1,-1],[-1,1],[1,-1],[1,1]];
+
+/* pseudoMoves(color): tutte le mosse senza controllo dello scacco */
+function pseudoMoves(color){
+  const out = [];
+  for(let i = 0; i < 64; i++){
+    const p = board[i];
+    if(!p || colorOf(p) !== color) continue;
+    const [r, c] = RC(i), t = p.toLowerCase();
+
+    if(t === 'p'){
+      const dir = color === 'w' ? -1 : 1;
+      const start = color === 'w' ? 6 : 1;
+      const last  = color === 'w' ? 0 : 7;
+      // spinta singola/doppia
+      if(ON(r+dir, c) && !board[IX(r+dir, c)]){
+        out.push({ f:i, t:IX(r+dir,c), flag: r+dir === last ? 'promo' : '' });
+        if(r === start && !board[IX(r+2*dir, c)])
+          out.push({ f:i, t:IX(r+2*dir,c), flag:'dbl' });
+      }
+      // catture (+ en passant)
+      for(const dc of [-1, 1]){
+        if(!ON(r+dir, c+dc)) continue;
+        const j = IX(r+dir, c+dc), q = board[j];
+        if(q && colorOf(q) !== color)
+          out.push({ f:i, t:j, flag: r+dir === last ? 'promo' : '' });
+        else if(j === ep)
+          out.push({ f:i, t:j, flag:'ep' });
+      }
+    }
+    else if(t === 'n' || t === 'k'){
+      for(const [dr, dc] of (t === 'n' ? KN : KADJ)){
+        if(!ON(r+dr, c+dc)) continue;
+        const j = IX(r+dr, c+dc), q = board[j];
+        if(!q || colorOf(q) !== color) out.push({ f:i, t:j, flag:'' });
+      }
+      // arrocco: caselle libere e non attraversate sotto attacco
+      if(t === 'k'){
+        const home = color === 'w' ? 7 : 0;
+        const rights = color === 'w' ? ['wK','wQ'] : ['bK','bQ'];
+        const foe = color === 'w' ? 'b' : 'w';
+        if(i === IX(home,4) && !isAttacked(i, foe)){
+          if(castle[rights[0]] && !board[IX(home,5)] && !board[IX(home,6)] &&
+             !isAttacked(IX(home,5), foe) && !isAttacked(IX(home,6), foe))
+            out.push({ f:i, t:IX(home,6), flag:'castleK' });
+          if(castle[rights[1]] && !board[IX(home,3)] && !board[IX(home,2)] && !board[IX(home,1)] &&
+             !isAttacked(IX(home,3), foe) && !isAttacked(IX(home,2), foe))
+            out.push({ f:i, t:IX(home,2), flag:'castleQ' });
+        }
+      }
+    }
+    else{
+      // pezzi a scorrimento: torre/alfiere/donna
+      const dirs = t === 'r' ? ORTH : t === 'b' ? DIAG : ORTH.concat(DIAG);
+      for(const [dr, dc] of dirs){
+        let rr = r+dr, cc = c+dc;
+        while(ON(rr, cc)){
+          const j = IX(rr, cc), q = board[j];
+          if(!q){ out.push({ f:i, t:j, flag:'' }); }
+          else { if(colorOf(q) !== color) out.push({ f:i, t:j, flag:'' }); break; }
+          rr += dr; cc += dc;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/* isAttacked(i, by): la casella i è attaccata dal colore by? */
+function isAttacked(i, by){
+  const [r, c] = RC(i);
+  // pedoni
+  const pr = by === 'w' ? r+1 : r-1;
+  for(const dc of [-1, 1])
+    if(ON(pr, c+dc) && board[IX(pr, c+dc)] === (by === 'w' ? 'P' : 'p')) return true;
+  // cavalli e re
+  for(const [dr, dc] of KN)
+    if(ON(r+dr, c+dc) && board[IX(r+dr, c+dc)] === (by === 'w' ? 'N' : 'n')) return true;
+  for(const [dr, dc] of KADJ)
+    if(ON(r+dr, c+dc) && board[IX(r+dr, c+dc)] === (by === 'w' ? 'K' : 'k')) return true;
+  // raggi ortogonali (torre/donna) e diagonali (alfiere/donna)
+  for(const [dirs, pcs] of [[ORTH, 'rq'], [DIAG, 'bq']]){
+    for(const [dr, dc] of dirs){
+      let rr = r+dr, cc = c+dc;
+      while(ON(rr, cc)){
+        const q = board[IX(rr, cc)];
+        if(q){
+          if(colorOf(q) === by && pcs.includes(q.toLowerCase())) return true;
+          break;
+        }
+        rr += dr; cc += dc;
+      }
+    }
+  }
+  return false;
+}
+
+/* kingIdx(color): posizione del re */
+function kingIdx(color){
+  const k = color === 'w' ? 'K' : 'k';
+  return board.indexOf(k);
+}
+function inCheck(color){ return isAttacked(kingIdx(color), color === 'w' ? 'b' : 'w'); }
+
+/* makeMove(m): applica e ritorna info per unmake */
+function makeMove(m){
+  const p = board[m.f];
+  const u = { m, p, cap: board[m.t], castle: { ...castle }, ep, epCap: null };
+  board[m.t] = p; board[m.f] = '';
+
+  if(m.flag === 'ep'){
+    const dir = colorOf(p) === 'w' ? 1 : -1;       // il pedone catturato sta "dietro"
+    u.epCap = m.t + dir * 8;
+    u.epCapPiece = board[u.epCap];
+    board[u.epCap] = '';
+  }
+  if(m.flag === 'castleK'){ board[m.t-1] = board[m.t+1]; board[m.t+1] = ''; }
+  if(m.flag === 'castleQ'){ board[m.t+1] = board[m.t-2]; board[m.t-2] = ''; }
+  if(m.flag === 'promo')   board[m.t] = colorOf(p) === 'w' ? 'Q' : 'q';
+
+  ep = m.flag === 'dbl' ? (m.f + m.t) / 2 : null;
+
+  // aggiorna diritti d'arrocco su mossa/cattura di re e torri
+  if(p === 'K'){ castle.wK = castle.wQ = false; }
+  if(p === 'k'){ castle.bK = castle.bQ = false; }
+  for(const [sq, key] of [[63,'wK'],[56,'wQ'],[7,'bK'],[0,'bQ']])
+    if(m.f === sq || m.t === sq) castle[key] = false;
+
+  turn = turn === 'w' ? 'b' : 'w';
+  return u;
+}
+
+/* unmake(u): annulla una mossa */
+function unmake(u){
+  board[u.m.f] = u.p;
+  board[u.m.t] = u.cap;
+  if(u.epCap !== null) board[u.epCap] = u.epCapPiece;
+  if(u.m.flag === 'castleK'){ board[u.m.t+1] = board[u.m.t-1]; board[u.m.t-1] = ''; }
+  if(u.m.flag === 'castleQ'){ board[u.m.t-2] = board[u.m.t+1]; board[u.m.t+1] = ''; }
+  castle = u.castle; ep = u.ep;
+  turn = turn === 'w' ? 'b' : 'w';
+}
+
+/* legalAll(color): pseudo-mosse filtrate per scacco al proprio re */
+function legalAll(color){
+  return pseudoMoves(color).filter((m) => {
+    const u = makeMove(m);
+    const ok = !inCheck(color);
+    unmake(u);
+    return ok;
+  });
+}
+
+/* =========================================================
+   CPU — negamax con alpha-beta. Livelli = profondità.
+   ========================================================= */
+const VAL = { p:100, n:300, b:315, r:500, q:900, k:0 };
+let aiLevel = 2;   // 1 novice · 2 normal · 3 expert
+
+/* evalSide(color): materiale + leggero bonus centro, dal punto di vista di color */
+function evalSide(color){
+  let s = 0;
+  for(let i = 0; i < 64; i++){
+    const p = board[i];
+    if(!p) continue;
+    const [r, c] = RC(i);
+    const v = VAL[p.toLowerCase()] +
+      ((r > 1 && r < 6 && c > 1 && c < 6) ? 6 : 0);
+    s += colorOf(p) === color ? v : -v;
+  }
+  return s;
+}
+
+/* negamax(depth, alpha, beta): valore della posizione per chi muove */
+function negamax(depth, alpha, beta){
+  const moves = legalAll(turn);
+  if(!moves.length) return inCheck(turn) ? -99999 - depth : 0;   // matto/stallo
+  if(depth === 0) return evalSide(turn);
+  // ordina le catture per prime (potatura migliore)
+  moves.sort((a, b) => (board[b.t] ? 1 : 0) - (board[a.t] ? 1 : 0));
+  let best = -Infinity;
+  for(const m of moves){
+    const u = makeMove(m);
+    const v = -negamax(depth - 1, -beta, -alpha);
+    unmake(u);
+    if(v > best) best = v;
+    if(best > alpha) alpha = best;
+    if(alpha >= beta) break;
+  }
+  return best;
+}
+
+/* aiBestMove(): mossa migliore per il nero al livello corrente */
+function aiBestMove(){
+  const moves = legalAll('b');
+  if(!moves.length) return null;
+  const jitter = aiLevel === 1 ? 220 : aiLevel === 2 ? 25 : 0;
+  let best = null, bestV = -Infinity;
+  for(const m of moves){
+    const u = makeMove(m);
+    let v = -negamax(aiLevel - 1, -Infinity, Infinity);
+    unmake(u);
+    v += Math.random() * jitter;     // novice sbaglia apposta
+    if(v > bestV){ bestV = v; best = m; }
+  }
+  return best;
+}
+
+/* =========================================================
+   SPRITE 1-BIT — 14x20. '#'=linea '.'=trasparente 'o'=campitura
+   'x'=dithering. Bianchi: campitura bianca, linee nere.
+   Neri: campitura nera, linee bianche (inversione).
+   ========================================================= */
+const SPR = {
+p:[ // pedone: soldato con elmo
+'......##......','.....#oo#.....','....#oooo#....','....#oxxo#....',
+'....#oooo#....','.....#oo#.....','....##oo##....','...#oooooo#...',
+'..#oo#oo#oo#..','..#oooooooo#..','...#oooooo#...','...#oooooo#...',
+'...#oxxxxo#...','...#oooooo#...','....#oooo#....','....#oooo#....',
+'...#oooooo#...','..#oooooooo#..','.#oooooooooo#.','.############.'],
+r:[ // torre: fortificazione merlata
+'####.####.####','#oo#.#oo#.#oo#','#oo###oo###oo#','#oooooooooooo#',
+'.#oooooooooo#.','.#oxoxoxoxox#.','.#oooooooooo#.','.#xoxoxoxoxo#.',
+'.#oooooooooo#.','.#oxoxoxoxox#.','.#oooooooooo#.','.#oooooooooo#.',
+'.#oooooooooo#.','.#oooooooooo#.','.#oooooooooo#.','#oooooooooooo#',
+'#oxxxxxxxxxxo#','#oooooooooooo#','##############','##############'],
+n:[ // cavallo: testa equina
+'.....####.....','....#oooo#....','...#o#ooooo#..','..#ooooooooo#.',
+'..#oo#oooooo#.','.#ooooooooooo#','.#oooo##ooooo#','..##ooo#oooo#.',
+'....#ooo#ooo#.','...#oooo#oo#..','...#ooooo##...','..#ooooooo#...',
+'..#oooooooo#..','..#oooooooo#..','.#oooooooooo#.','.#oooooooooo#.',
+'.#oxxxxxxxxo#.','.#oooooooooo#.','#oooooooooooo#','##############'],
+b:[ // alfiere: mitra
+'......##......','.....#oo#.....','....#oooo#....','...#oo##oo#...',
+'...#oo##oo#...','...#oooooo#...','..#oo####oo#..','..#oooooooo#..',
+'...#oooooo#...','....#oooo#....','.....#oo#.....','....#oooo#....',
+'....#oooo#....','...#oooooo#...','...#oxxxxo#...','...#oooooo#...',
+'..#oooooooo#..','.#oooooooooo#.','.#oooooooooo#.','.############.'],
+q:[ // regina: corona a punte
+'.#..#.##.#..#.','.#.#o#oo#o#.#.','.#o#oooooo#o#.','.#oooooooooo#.',
+'..#oxooooxo#..','..#oooooooo#..','...#oooooo#...','...#oooooo#...',
+'....#oooo#....','....#oooo#....','....#oooo#....','...#oooooo#...',
+'...#oooooo#...','..#oooooooo#..','..#oxxxxxxo#..','..#oooooooo#..',
+'.#oooooooooo#.','.#oooooooooo#.','##ooooooooo##.','##############'],
+k:[ // re: croce + corona
+'......##......','.....#oo#.....','...###oo###...','...#oooooo#...',
+'...###oo###...','.....#oo#.....','.##.######.##.','.#o##oooo##o#.',
+'.#oooooooooo#.','..#oxooooxo#..','..#oooooooo#..','...#oooooo#...',
+'....#oooo#....','....#oooo#....','...#oooooo#...','..#oooooooo#..',
+'..#oxxxxxxo#..','.#oooooooooo#.','##oooooooooo##','##############'],
+};
+
+/* =========================================================
+   RENDERING — isometrico, tile 32x16, tutto a fillRect 1px.
+   ========================================================= */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const TW = 32, TH = 16;             // diamante 2:1
+const OX = 144, OY = 30;            // origine board (a8 in alto)
+
+let sel = null;        // casella selezionata (idx)
+let targets = [];      // mosse legali dalla selezione
+let thinking = false;
+
+/* tileXY(i): centro del diamante della casella i */
+function tileXY(i){
+  const [r, c] = RC(i);
+  return [OX + (c - r) * TW/2, OY + (c + r) * TH/2];
+}
+
+/* px(x,y,col): un pixel */
+function px(x, y, col){ ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); }
+
+/* drawDiamond(x,y,mode): riempie il diamante riga per riga.
+   mode: 'white' | 'dither' (50%) | 'invert' (selezione: dith. invertito) */
+function drawDiamond(x, y, mode){
+  for(let dy = -TH/2; dy <= TH/2; dy++){
+    const w = TW/2 - Math.abs(dy) * 2;
+    if(w < 0) continue;
+    const yy = y + dy;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x - w, yy, w * 2 || 1, 1);
+    if(mode !== 'white'){
+      // dithering: pixel neri a scacchiera (parità invertita per la selezione)
+      const par = mode === 'invert' ? 1 : 0;
+      for(let xx = x - w; xx < x + w; xx++)
+        if(((xx + yy) & 1) === par) px(xx, yy, '#000');
+    }
+    // bordo del diamante
+    px(x - w, yy, '#000');
+    px(x + w - (w ? 1 : 0), yy, '#000');
+  }
+}
+
+/* drawTargetMark(i): bordo tratteggiato sul diamante di destinazione */
+function drawTargetMark(i){
+  const [x, y] = tileXY(i);
+  const dark = ((RC(i)[0] + RC(i)[1]) & 1) === 1;
+  const col = dark ? '#fff' : '#000';
+  for(let dy = -TH/2; dy <= TH/2; dy++){
+    const w = TW/2 - Math.abs(dy) * 2;
+    if(w < 0) continue;
+    if((dy & 1) === 0){               // tratteggio: una riga sì una no
+      px(x - w, y + dy, col);
+      px(x + w - (w ? 1 : 0), y + dy, col);
+    }
+  }
+  // puntino centrale ditherato
+  for(let dy = -1; dy <= 1; dy++)
+    for(let dx = -2; dx <= 2; dx++)
+      if(((dx + dy) & 1) === 0) px(x + dx, y + dy, col);
+}
+
+/* drawPiece(i): sprite a (x,y), fazioni invertite.
+   bianco: 'o'→bianco '#'→nero · nero: 'o'→nero '#'→bianco */
+function drawPiece(i){
+  const p = board[i];
+  const spr = SPR[p.toLowerCase()];
+  const white = colorOf(p) === 'w';
+  const [x, y] = tileXY(i);
+  const x0 = x - 7, y0 = y - 17;     // ancora: piedi appena sotto il centro tile
+  for(let r = 0; r < 20; r++){
+    const row = spr[r];
+    for(let c = 0; c < 14; c++){
+      const ch = row[c];
+      if(ch === '.') continue;
+      if(ch === 'x'){ px(x0 + c, y0 + r, ((c + r) & 1) ? '#fff' : '#000'); continue; }
+      const ink = ch === '#' ? (white ? '#000' : '#fff') : (white ? '#fff' : '#000');
+      px(x0 + c, y0 + r, ink);
+    }
+  }
+}
+
+/* render(): sfondo, spessore base, caselle, evidenziazioni, pezzi */
+function render(){
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+
+  // base 3D: sagoma del board spostata in giù, dithering fitto
+  for(let i = 0; i < 64; i++){
+    const [x, y] = tileXY(i);
+    drawDiamond(x, y + 5, 'dither');
+  }
+  // caselle
+  for(let i = 0; i < 64; i++){
+    const [r, c] = RC(i);
+    const dark = ((r + c) & 1) === 1;
+    const [x, y] = tileXY(i);
+    drawDiamond(x, y, i === sel ? 'invert' : (dark ? 'dither' : 'white'));
+  }
+  // destinazioni legali (solo se Settings → Show Moves è attivo)
+  if(showMoves) for(const m of targets) drawTargetMark(m.t);
+  // pezzi dal fondo verso il davanti (painter)
+  const occ = [];
+  for(let i = 0; i < 64; i++) if(board[i]) occ.push(i);
+  occ.sort((a, b) => (RC(a)[0] + RC(a)[1]) - (RC(b)[0] + RC(b)[1]));
+  occ.forEach(drawPiece);
+}
+
+/* =========================================================
+   INTERAZIONE
+   ========================================================= */
+const stMsg = document.getElementById('st-msg');
+const stLvl = document.getElementById('st-lvl');
+let sndOn = true, showMoves = true;
+
+/* beep(): click di sistema via Web Audio (square corta) */
+let actx = null;
+function beep(f = 660){
+  if(!sndOn) return;
+  if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  actx.resume();
+  const t0 = actx.currentTime;
+  const o = actx.createOscillator(); o.type = 'square'; o.frequency.value = f;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.08, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0 + 0.06);
+}
+
+/* status(msg): riga di stato */
+function status(msg){ stMsg.textContent = msg; }
+
+/* checkEnd(): aggiorna stato partita dopo ogni mossa. true se finita */
+function checkEnd(){
+  if(legalAll(turn).length) {
+    status((turn === 'w' ? 'WHITE' : 'BLACK') + ' TO MOVE' + (inCheck(turn) ? ' — CHECK!' : ''));
+    return false;
+  }
+  gameOver = true;
+  if(inCheck(turn)){
+    const winner = turn === 'w' ? 'BLACK' : 'WHITE';
+    status('CHECKMATE — ' + winner + ' WINS');
+    showDialog('CHECKMATE', winner + ' wins.\nFile → New Game per rigiocare.');
+  } else {
+    status('STALEMATE — DRAW');
+    showDialog('STALEMATE', 'Patta. Nessuno vince.\n(molto lazyyy come finale)');
+  }
+  beep(220);
+  return true;
+}
+
+/* doMove(m): esegue, suona, ridisegna */
+function doMove(m){
+  makeMove(m);
+  history.push(m);
+  sel = null; targets = [];
+  beep(660);
+  render();
+}
+
+/* aiTurn(): la CPU (nero) pensa e muove */
+function aiTurn(){
+  if(gameOver || turn !== 'b') return;
+  thinking = true;
+  status('BLACK IS THINKING…');
+  setTimeout(() => {
+    const m = aiBestMove();
+    if(m) doMove(m);
+    thinking = false;
+    checkEnd();
+  }, 350);
+}
+
+/* pickTile(ev): da coordinate click a indice casella (inversa isometrica) */
+function pickTile(ev){
+  const rect = cv.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) * (cv.width / rect.width);
+  const y = (ev.clientY - rect.top) * (cv.height / rect.height);
+  const a = (x - OX) / (TW/2), b = (y - OY) / (TH/2);
+  const c = Math.round((a + b) / 2), r = Math.round((b - a) / 2);
+  return ON(r, c) ? IX(r, c) : null;
+}
+
+cv.addEventListener('pointerdown', (ev) => {
+  ev.preventDefault();
+  if(gameOver || thinking || turn !== 'w') return;
+  const i = pickTile(ev);
+  if(i === null){ sel = null; targets = []; render(); return; }
+
+  // click su una destinazione legale → muovi
+  const m = targets.find((t) => t.t === i);
+  if(m){
+    doMove(m);
+    if(!checkEnd()) aiTurn();
+    return;
+  }
+  // click su un proprio pezzo → seleziona (targets servono comunque per muovere)
+  if(board[i] && colorOf(board[i]) === 'w'){
+    sel = i;
+    targets = legalAll('w').filter((mv) => mv.f === i);
+    beep(880);
+  } else {
+    sel = null; targets = [];
+  }
+  render();
+});
+
+/* undoFull(): annulla mossa CPU + mossa umana */
+function undoFull(){
+  if(thinking || !history.length) return;
+  // togli mezze mosse finché non tocca di nuovo al bianco
+  do {
+    history.pop();
+    rebuildFromHistory();
+  } while(history.length && turn !== 'w');
+  sel = null; targets = []; gameOver = false;
+  render(); checkEnd();
+}
+
+/* rebuildFromHistory(): rigioca la partita dall'inizio (semplice e sicuro) */
+function rebuildFromHistory(){
+  const h = history.slice();
+  initGame();
+  history = [];
+  h.forEach((m) => { makeMove(m); history.push(m); });
+}
+
+/* =========================================================
+   MENU BAR + DIALOG
+   ========================================================= */
+const dd = document.getElementById('dd');
+const menubar = document.getElementById('menubar');
+let openMenu = null;
+
+const LEVELS = { 1:'NOVICE', 2:'NORMAL', 3:'EXPERT' };
+
+/* buildMenu(name): voci per ciascun menu */
+function buildMenu(name){
+  if(name === 'apple') return [
+    { t:'About Chess…', fn(){ showDialog('CHESS 1.0', 'LZYYY_SYS · 1987\n1-bit · dithered · instabile'); } },
+  ];
+  if(name === 'file') return [
+    { t:'New Game', fn(){ initGame(); render(); status('WHITE TO MOVE'); } },
+    { sep:true },
+    { t:'Quit', fn(){ showDialog('QUIT', 'Non si esce da LZYYY_SYS.'); } },
+  ];
+  if(name === 'edit') return [
+    { t:'Undo Move', fn: undoFull },
+  ];
+  if(name === 'move') return [
+    { t:'Hint', fn(){
+        if(gameOver || thinking || turn !== 'w') return;
+        // cerca una buona mossa per il bianco e mostrala come selezione
+        const moves = legalAll('w');
+        if(!moves.length) return;
+        let best = moves[0], bestV = -Infinity;
+        for(const m of moves){
+          const u = makeMove(m);
+          const v = -negamax(1, -Infinity, Infinity);
+          unmake(u);
+          if(v > bestV){ bestV = v; best = m; }
+        }
+        sel = best.f; targets = [best];
+        render(); beep(880);
+      } },
+    { t:'Resign', fn(){
+        if(gameOver) return;
+        gameOver = true;
+        status('WHITE RESIGNS — BLACK WINS');
+        showDialog('RESIGN', 'Hai abbandonato.\nIl ventilatore ti giudica.');
+      } },
+  ];
+  if(name === 'settings') return [
+    { t:'Sound',      check: sndOn,     fn(){ sndOn = !sndOn; } },
+    { t:'Show Moves', check: showMoves, fn(){ showMoves = !showMoves; sel = null; targets = []; render(); } },
+  ];
+  if(name === 'level') return [1,2,3].map((l) => ({
+    t: LEVELS[l], check: aiLevel === l,
+    fn(){ aiLevel = l; stLvl.textContent = 'LEVEL: ' + LEVELS[l]; },
+  }));
+  return [];
+}
+
+/* showMenu(mi): apre il dropdown sotto la voce di menu */
+function showMenu(mi){
+  closeMenu();
+  openMenu = mi;
+  mi.classList.add('open');
+  dd.innerHTML = '';
+  buildMenu(mi.dataset.m).forEach((it) => {
+    if(it.sep){ const s = document.createElement('div'); s.className = 'sep'; dd.appendChild(s); return; }
+    const d = document.createElement('div');
+    d.className = 'it' + (it.check ? ' check' : '');
+    d.textContent = it.t;
+    d.onclick = (e) => { e.stopPropagation(); closeMenu(); it.fn(); };
+    dd.appendChild(d);
+  });
+  const r = mi.getBoundingClientRect();
+  dd.style.left = r.left + 'px';
+  dd.style.top = r.bottom + 'px';
+  dd.style.display = 'block';
+}
+function closeMenu(){
+  if(openMenu) openMenu.classList.remove('open');
+  openMenu = null;
+  dd.style.display = 'none';
+}
+menubar.addEventListener('click', (e) => {
+  const mi = e.target.closest('.mi');
+  if(!mi) return;
+  e.stopPropagation();
+  openMenu === mi ? closeMenu() : showMenu(mi);
+});
+document.addEventListener('click', closeMenu);
+
+/* closebox della finestra: scherzo, la finestra vera è quella dell'OS */
+document.getElementById('closebox').addEventListener('click', () => {
+  showDialog('CLOSE', 'Bel tentativo.\nUsa la ✕ della finestra vera.');
+});
+
+/* dialog modale */
+const dlgWrap = document.getElementById('dlg-wrap');
+function showDialog(title, body){
+  document.getElementById('dlg-t').textContent = title;
+  document.getElementById('dlg-b').textContent = body;
+  dlgWrap.style.display = 'flex';
+}
+document.getElementById('dlg-ok').addEventListener('click', () => {
+  dlgWrap.style.display = 'none';
+});
+
+/* Avvio */
+initGame();
+render();
+</script>
+</body>
+</html>

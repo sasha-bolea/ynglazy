@@ -122,6 +122,7 @@ ynglazy/
 | Tetris | apps/tetris.html | ✅ FATTO | Touch: pulsanti + gesti swipe. EE-07 incluso |
 | Browser | apps/browser.html | ✅ FATTO | Presave orcd.co + scheda OFFLINE con gioco dino |
 | Terminale | apps/terminal.html | ✅ FATTO | Comandi fake; EE-05 `secret` → drone audio nascosto |
+| Chess | apps/chess.html | ✅ FATTO | Mac System 6/7 1-bit, iso pixel-art, motore reale (perft-verificato), CPU 3 livelli |
 | About.exe | — | ❌ RIMOSSA | Fatta e poi tolta su richiesta (2026-06-10) |
 | SampleBank | — | ❌ RIMOSSA | Fatta e poi tolta su richiesta (2026-06-10) |
 
