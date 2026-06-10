@@ -7,9 +7,9 @@
 <style>
 /* =========================================================
    CHESS — Macintosh System 6/7, 1-bit. Solo #FFFFFF e #000000.
-   Scacchiera isometrica su canvas a bassa risoluzione (288x190)
-   upscalata con image-rendering:pixelated. Dithering disegnato
-   a mano pixel per pixel (niente grigi CSS).
+   Layout "Mini vMac": finestra con titlebar a righe, menu bar
+   interna, schermo 512x330. Scacchiera in PROSPETTIVA frontale
+   (stile Battle Chess Mac), dithering disegnato pixel per pixel.
    ========================================================= */
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
@@ -17,51 +17,27 @@ body{
   background:#fff; color:#000;
   font-family:'Monaco','Courier New',monospace; font-size:12px;
   user-select:none; overflow:hidden;
-  display:flex; flex-direction:column;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
   -webkit-tap-highlight-color:transparent;
   /* freccia nera classica del Mac, bordo bianco */
   cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='18'%3E%3Cpath d='M1 1L1 14L4.5 11L7 17L9.5 16L7 10L11 10Z' fill='black' stroke='white'/%3E%3C/svg%3E") 1 1, default;
-}
-
-/* sfondo "scrivania" Mac: dithering 50% */
-.mac-desk{
-  flex:1; min-height:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; padding:8px;
+  /* scrivania Mac: dithering 50% */
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='2' height='2' fill='white'/%3E%3Crect width='1' height='1' fill='black'/%3E%3Crect x='1' y='1' width='1' height='1' fill='black'/%3E%3C/svg%3E");
   image-rendering:pixelated;
+  padding:6px;
 }
 
-/* barra menu in alto */
-.mac-menubar{
-  flex-shrink:0; display:flex; align-items:center; gap:0;
-  height:20px; padding:0 4px;
-  background:#fff; border-bottom:1px solid #000;
-  font-size:12px; position:relative; z-index:20;
-}
-.mac-menubar .mi{ padding:2px 9px; white-space:nowrap; }
-.mac-menubar .mi.open{ background:#000; color:#fff; }
-
-/* dropdown menu */
-#dd{
-  position:fixed; display:none; z-index:30; min-width:150px;
-  background:#fff; border:1px solid #000;
-  box-shadow:2px 2px 0 #000;
-}
-#dd .it{ padding:3px 18px 3px 22px; white-space:nowrap; position:relative; }
-#dd .it:hover{ background:#000; color:#fff; }
-#dd .it.check::before{ content:'✓'; position:absolute; left:6px; }
-#dd .sep{ border-top:1px dotted #000; margin:2px 0; }
-
-/* finestra System 6/7 */
+/* finestra stile Mini vMac */
 .mac-win{
-  background:#fff; border:1px solid #000;
+  background:#fff; border:2px solid #000;
   box-shadow:2px 2px 0 #000;
-  width:min(100%, 600px);
+  width:min(100%, 520px);
+  display:flex; flex-direction:column;
 }
-/* barra titolo a righe orizzontali + closebox a sinistra */
+/* titlebar a righe orizzontali + closebox a sinistra */
 .mac-title{
-  height:18px; display:flex; align-items:center;
-  border-bottom:1px solid #000; padding:0 4px; position:relative;
+  height:18px; display:flex; align-items:center; flex-shrink:0;
+  border-bottom:1px solid #000; padding:0 4px;
   background-image:repeating-linear-gradient(to bottom,
     #fff 0 2px, #000 2px 3px, #fff 3px 4px, #000 4px 5px,
     #fff 5px 6px, #000 6px 7px, #fff 7px 8px, #000 8px 9px,
@@ -69,68 +45,76 @@ body{
     #fff 13px 14px, #000 14px 15px, #fff 15px 16px, #000 16px 18px);
 }
 .mac-title .closebox{
-  width:11px; height:11px; background:#fff; border:1px solid #000;
-  flex-shrink:0;
+  width:11px; height:11px; background:#fff; border:1px solid #000; flex-shrink:0;
 }
 .mac-title .closebox:active{ background:#000; }
-.mac-title .t{
-  margin:0 auto; padding:0 10px; background:#fff;
-  font-size:12px; letter-spacing:1px;
+.mac-title .t{ margin:0 auto; padding:0 10px; background:#fff; font-size:12px; letter-spacing:1px; }
+
+/* menu bar interna alla finestra (come lo schermo Mac emulato) */
+.mac-menubar{
+  flex-shrink:0; display:flex; align-items:center;
+  height:19px; padding:0 4px;
+  background:#fff; border-bottom:1px solid #000;
+  font-size:12px; position:relative; z-index:20;
 }
+.mac-menubar .mi{ padding:2px 8px; white-space:nowrap; }
+.mac-menubar .mi.open{ background:#000; color:#fff; }
+
+/* dropdown */
+#dd{
+  position:fixed; display:none; z-index:30; min-width:150px;
+  background:#fff; border:1px solid #000; box-shadow:2px 2px 0 #000;
+}
+#dd .it{ padding:3px 18px 3px 22px; white-space:nowrap; position:relative; }
+#dd .it:hover{ background:#000; color:#fff; }
+#dd .it.check::before{ content:'✓'; position:absolute; left:6px; }
+#dd .sep{ border-top:1px dotted #000; margin:2px 0; }
 
 #cv{ display:block; width:100%; image-rendering:pixelated; }
 
-/* barra stato della finestra */
 .mac-status{
-  border-top:1px solid #000; padding:3px 8px;
+  border-top:1px solid #000; padding:3px 8px; flex-shrink:0;
   font-size:11px; letter-spacing:1px; display:flex; justify-content:space-between;
 }
 
 /* dialog modale stile Mac */
-#dlg-wrap{
-  position:fixed; inset:0; display:none; z-index:40;
-  align-items:center; justify-content:center;
-}
+#dlg-wrap{ position:fixed; inset:0; display:none; z-index:40; align-items:center; justify-content:center; }
 #dlg{
   background:#fff; border:2px solid #000; box-shadow:3px 3px 0 #000;
-  min-width:230px; max-width:85%; padding:14px 16px 12px;
-  text-align:center;
+  min-width:230px; max-width:85%; padding:14px 16px 12px; text-align:center;
 }
 #dlg .dt{ font-size:13px; margin-bottom:8px; letter-spacing:1px; }
 #dlg .db{ font-size:11px; line-height:1.6; margin-bottom:12px; white-space:pre-line; }
 #dlg button{
   font-family:inherit; font-size:12px; padding:3px 22px;
-  background:#fff; color:#000; border:2px solid #000; border-radius:8px;
-  cursor:inherit;
+  background:#fff; color:#000; border:2px solid #000; border-radius:8px; cursor:inherit;
 }
 #dlg button:active{ background:#000; color:#fff; }
 
 @media (max-width:480px){
   .mac-menubar{ font-size:11px; }
-  .mac-menubar .mi{ padding:2px 6px; }
-  .mac-desk{ padding:4px; }
+  .mac-menubar .mi{ padding:2px 5px; }
+  body{ padding:3px; }
 }
 </style>
 </head>
 <body>
 
-<div class="mac-menubar" id="menubar">
-  <span class="mi" data-m="apple"></span>
-  <span class="mi" data-m="file">File</span>
-  <span class="mi" data-m="edit">Edit</span>
-  <span class="mi" data-m="move">Move</span>
-  <span class="mi" data-m="settings">Settings</span>
-  <span class="mi" data-m="level">Level</span>
+<div class="mac-win">
+  <div class="mac-title"><span class="closebox" id="closebox"></span><span class="t">Chess</span></div>
+  <div class="mac-menubar" id="menubar">
+    <span class="mi" data-m="apple"></span>
+    <span class="mi" data-m="file">File</span>
+    <span class="mi" data-m="edit">Edit</span>
+    <span class="mi" data-m="move">Move</span>
+    <span class="mi" data-m="settings">Settings</span>
+    <span class="mi" data-m="level">Level</span>
+    <span class="mi" data-m="modem">Modem</span>
+  </div>
+  <canvas id="cv" width="512" height="330"></canvas>
+  <div class="mac-status"><span id="st-msg">WHITE TO MOVE</span><span id="st-lvl">LEVEL: NORMAL</span></div>
 </div>
 <div id="dd"></div>
-
-<div class="mac-desk">
-  <div class="mac-win">
-    <div class="mac-title"><span class="closebox" id="closebox"></span><span class="t">Chess</span></div>
-    <canvas id="cv" width="288" height="190"></canvas>
-    <div class="mac-status"><span id="st-msg">WHITE TO MOVE</span><span id="st-lvl">LEVEL: NORMAL</span></div>
-  </div>
-</div>
 
 <div id="dlg-wrap"><div id="dlg">
   <div class="dt" id="dlg-t"></div>
@@ -144,7 +128,6 @@ body{
    Maiuscole = bianco (in basso, umano), minuscole = nero (CPU).
    Mosse legali complete: arrocco, en passant, promozione.
    ========================================================= */
-const W8 = 8;
 let board, turn, castle, ep, history, gameOver;
 
 /* idx/r/c helpers */
@@ -327,7 +310,7 @@ function legalAll(color){
 const VAL = { p:100, n:300, b:315, r:500, q:900, k:0 };
 let aiLevel = 2;   // 1 novice · 2 normal · 3 expert
 
-/* evalSide(color): materiale + leggero bonus centro, dal punto di vista di color */
+/* evalSide(color): materiale + leggero bonus centro */
 function evalSide(color){
   let s = 0;
   for(let i = 0; i < 64; i++){
@@ -377,9 +360,10 @@ function aiBestMove(){
 }
 
 /* =========================================================
-   SPRITE 1-BIT — 14x20. '#'=linea '.'=trasparente 'o'=campitura
-   'x'=dithering. Bianchi: campitura bianca, linee nere.
-   Neri: campitura nera, linee bianche (inversione).
+   SPRITE 1-BIT — 14x20, resi a 2x (28x40 a schermo).
+   '#'=linea '.'=trasparente 'o'=campitura 'x'=dithering.
+   Bianchi (in basso): campitura bianca, linee nere.
+   Neri (in alto): campitura nera, linee bianche (inversione).
    ========================================================= */
 const SPR = {
 p:[ // pedone: soldato con elmo
@@ -421,110 +405,166 @@ k:[ // re: croce + corona
 };
 
 /* =========================================================
-   RENDERING — isometrico, tile 32x16, tutto a fillRect 1px.
+   RENDERING — prospettiva frontale (Battle Chess Mac).
+   Le righe della scacchiera sono trapezi: più strette e basse
+   verso il fondo. Tutto disegnato a fillRect 1px, niente AA.
    ========================================================= */
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const TW = 32, TH = 16;             // diamante 2:1
-const OX = 144, OY = 30;            // origine board (a8 in alto)
+const CW = 512, CH = 330;
+const CX = 256;                       // asse centrale
+const Y_TOP = 56, Y_BOT = 322;        // bordo posteriore/anteriore del board
+const HW_TOP = 196, HW_BOT = 252;     // semi-larghezza board dietro/davanti
 
 let sel = null;        // casella selezionata (idx)
 let targets = [];      // mosse legali dalla selezione
 let thinking = false;
 
-/* tileXY(i): centro del diamante della casella i */
-function tileXY(i){
-  const [r, c] = RC(i);
-  return [OX + (c - r) * TW/2, OY + (c + r) * TH/2];
+/* YB[i]: y del confine di riga i (0..8). Quadratica: righe
+   davanti più alte = effetto profondità */
+const YB = [];
+for(let i = 0; i <= 8; i++){
+  const t = i / 8;
+  YB.push(Math.round(Y_TOP + (Y_BOT - Y_TOP) * (0.55 * t + 0.45 * t * t)));
+}
+/* hwAt(y): semi-larghezza del board alla quota y (lineare in y) */
+function hwAt(y){
+  return HW_TOP + (HW_BOT - HW_TOP) * (y - Y_TOP) / (Y_BOT - Y_TOP);
+}
+/* xAt(j, y): x del confine di colonna j (0..8) alla quota y */
+function xAt(j, y){
+  const hw = hwAt(y);
+  return Math.round(CX + (j / 8 - 0.5) * 2 * hw);
 }
 
 /* px(x,y,col): un pixel */
 function px(x, y, col){ ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); }
 
-/* drawDiamond(x,y,mode): riempie il diamante riga per riga.
-   mode: 'white' | 'dither' (50%) | 'invert' (selezione: dith. invertito) */
-function drawDiamond(x, y, mode){
-  for(let dy = -TH/2; dy <= TH/2; dy++){
-    const w = TW/2 - Math.abs(dy) * 2;
-    if(w < 0) continue;
-    const yy = y + dy;
+/* fillTile(r,c,mode): riempie il trapezio della casella riga per riga.
+   mode: 'white' | 'dither' | 'invert' (selezione) */
+function fillTile(r, c, mode){
+  for(let y = YB[r]; y < YB[r+1]; y++){
+    const xL = xAt(c, y), xR = xAt(c+1, y);
     ctx.fillStyle = '#fff';
-    ctx.fillRect(x - w, yy, w * 2 || 1, 1);
+    ctx.fillRect(xL, y, xR - xL, 1);
     if(mode !== 'white'){
-      // dithering: pixel neri a scacchiera (parità invertita per la selezione)
       const par = mode === 'invert' ? 1 : 0;
-      for(let xx = x - w; xx < x + w; xx++)
-        if(((xx + yy) & 1) === par) px(xx, yy, '#000');
+      for(let x = xL; x < xR; x++)
+        if(((x + y) & 1) === par) px(x, y, '#000');
     }
-    // bordo del diamante
-    px(x - w, yy, '#000');
-    px(x + w - (w ? 1 : 0), yy, '#000');
   }
 }
 
-/* drawTargetMark(i): bordo tratteggiato sul diamante di destinazione */
+/* drawGrid(): linee della scacchiera sopra le caselle */
+function drawGrid(){
+  ctx.fillStyle = '#000';
+  for(let i = 0; i <= 8; i++){
+    const y = YB[i];
+    ctx.fillRect(xAt(0, y), y, xAt(8, y) - xAt(0, y) + 1, 1);   // orizzontali
+  }
+  for(let j = 0; j <= 8; j++)
+    for(let y = YB[0]; y <= YB[8]; y++) px(xAt(j, y), y, '#000'); // "verticali" convergenti
+}
+
+/* drawFloor(): pavimento a tratteggio diagonale fuori dal board */
+function drawFloor(){
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, CW, CH);
+  ctx.fillStyle = '#000';
+  for(let y = 0; y < CH; y++)
+    for(let x = ((y % 4) === 0 ? 0 : 4 - (y % 4)); x < CW; x += 4)
+      if(((x + y) % 4) === 0) px(x, y, '#000');
+}
+
+/* drawFrame(): cornice bianca attorno al board + spessore (slab) */
+function drawFrame(){
+  const PAD = 9;
+  // banda bianca: trapezio esteso oltre il board
+  for(let y = YB[0] - PAD; y < YB[8] + PAD; y++){
+    const yc = Math.max(YB[0], Math.min(YB[8], y));
+    const hw = hwAt(yc) + PAD + Math.round(3 * (y - Y_TOP) / (Y_BOT - Y_TOP));
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(Math.round(CX - hw), y, Math.round(hw * 2), 1);
+    // doppio bordo nero della cornice
+    px(Math.round(CX - hw), y, '#000');
+    px(Math.round(CX + hw) - 1, y, '#000');
+  }
+  ctx.fillStyle = '#000';
+  const hwT = hwAt(YB[0]) + PAD, hwB = hwAt(YB[8]) + PAD + 3;
+  ctx.fillRect(Math.round(CX - hwT), YB[0] - PAD, Math.round(hwT * 2), 1);
+  ctx.fillRect(Math.round(CX - hwB), YB[8] + PAD - 1, Math.round(hwB * 2), 1);
+  // slab: spessore sotto il bordo anteriore, dithering fitto (75%)
+  for(let y = YB[8] + PAD; y < YB[8] + PAD + 7; y++){
+    for(let x = Math.round(CX - hwB); x < Math.round(CX + hwB); x++)
+      if(!((x & 1) === 0 && (y & 1) === 0)) px(x, y, '#000');
+  }
+}
+
+/* drawTargetMark(i): bordo tratteggiato + puntino sulla destinazione */
 function drawTargetMark(i){
-  const [x, y] = tileXY(i);
-  const dark = ((RC(i)[0] + RC(i)[1]) & 1) === 1;
+  const [r, c] = RC(i);
+  const dark = ((r + c) & 1) === 1;
   const col = dark ? '#fff' : '#000';
-  for(let dy = -TH/2; dy <= TH/2; dy++){
-    const w = TW/2 - Math.abs(dy) * 2;
-    if(w < 0) continue;
-    if((dy & 1) === 0){               // tratteggio: una riga sì una no
-      px(x - w, y + dy, col);
-      px(x + w - (w ? 1 : 0), y + dy, col);
+  for(let y = YB[r]; y < YB[r+1]; y++){
+    if((y & 1) === 0){                       // lati tratteggiati
+      px(xAt(c, y) + 1, y, col);
+      px(xAt(c+1, y) - 1, y, col);
     }
   }
+  for(let x = xAt(c, YB[r]) + 1; x < xAt(c+1, YB[r]); x += 2)
+    px(x, YB[r] + 1, col);                   // bordo alto tratteggiato
+  for(let x = xAt(c, YB[r+1]) + 1; x < xAt(c+1, YB[r+1]); x += 2)
+    px(x, YB[r+1] - 1, col);                 // bordo basso tratteggiato
   // puntino centrale ditherato
+  const ym = (YB[r] + YB[r+1]) >> 1;
+  const xm = (xAt(c, ym) + xAt(c+1, ym)) >> 1;
   for(let dy = -1; dy <= 1; dy++)
     for(let dx = -2; dx <= 2; dx++)
-      if(((dx + dy) & 1) === 0) px(x + dx, y + dy, col);
+      if(((dx + dy) & 1) === 0) px(xm + dx, ym + dy, col);
 }
 
-/* drawPiece(i): sprite a (x,y), fazioni invertite.
+/* drawPiece(i): sprite a 2x ancorato al bordo basso della casella.
    bianco: 'o'→bianco '#'→nero · nero: 'o'→nero '#'→bianco */
 function drawPiece(i){
   const p = board[i];
   const spr = SPR[p.toLowerCase()];
   const white = colorOf(p) === 'w';
-  const [x, y] = tileXY(i);
-  const x0 = x - 7, y0 = y - 17;     // ancora: piedi appena sotto il centro tile
-  for(let r = 0; r < 20; r++){
-    const row = spr[r];
-    for(let c = 0; c < 14; c++){
-      const ch = row[c];
+  const [r, c] = RC(i);
+  const yB = YB[r+1] - 2;                          // piedi
+  const xm = (xAt(c, yB) + xAt(c+1, yB)) >> 1;     // centro casella in basso
+  const x0 = xm - 14, y0 = yB - 40;
+  for(let sr = 0; sr < 20; sr++){
+    const row = spr[sr];
+    for(let sc = 0; sc < 14; sc++){
+      const ch = row[sc];
       if(ch === '.') continue;
-      if(ch === 'x'){ px(x0 + c, y0 + r, ((c + r) & 1) ? '#fff' : '#000'); continue; }
+      const X = x0 + sc * 2, Y = y0 + sr * 2;
+      if(ch === 'x'){
+        // blocco 2x2 ditherato fine
+        px(X, Y, '#000'); px(X+1, Y, '#fff');
+        px(X, Y+1, '#fff'); px(X+1, Y+1, '#000');
+        continue;
+      }
       const ink = ch === '#' ? (white ? '#000' : '#fff') : (white ? '#fff' : '#000');
-      px(x0 + c, y0 + r, ink);
+      ctx.fillStyle = ink;
+      ctx.fillRect(X, Y, 2, 2);
     }
   }
 }
 
-/* render(): sfondo, spessore base, caselle, evidenziazioni, pezzi */
+/* render(): pavimento, cornice, caselle, griglia, evidenziazioni, pezzi */
 function render(){
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, cv.width, cv.height);
-
-  // base 3D: sagoma del board spostata in giù, dithering fitto
-  for(let i = 0; i < 64; i++){
-    const [x, y] = tileXY(i);
-    drawDiamond(x, y + 5, 'dither');
-  }
-  // caselle
+  drawFloor();
+  drawFrame();
   for(let i = 0; i < 64; i++){
     const [r, c] = RC(i);
     const dark = ((r + c) & 1) === 1;
-    const [x, y] = tileXY(i);
-    drawDiamond(x, y, i === sel ? 'invert' : (dark ? 'dither' : 'white'));
+    fillTile(r, c, i === sel ? 'invert' : (dark ? 'dither' : 'white'));
   }
-  // destinazioni legali (solo se Settings → Show Moves è attivo)
+  drawGrid();
   if(showMoves) for(const m of targets) drawTargetMark(m.t);
-  // pezzi dal fondo verso il davanti (painter)
-  const occ = [];
-  for(let i = 0; i < 64; i++) if(board[i]) occ.push(i);
-  occ.sort((a, b) => (RC(a)[0] + RC(a)[1]) - (RC(b)[0] + RC(b)[1]));
-  occ.forEach(drawPiece);
+  // pezzi dal fondo (riga 0) verso il davanti (painter)
+  for(let i = 0; i < 64; i++) if(board[i]) drawPiece(i);
 }
 
 /* =========================================================
@@ -593,13 +633,17 @@ function aiTurn(){
   }, 350);
 }
 
-/* pickTile(ev): da coordinate click a indice casella (inversa isometrica) */
+/* pickTile(ev): da click a indice casella (riga per quota, colonna
+   per larghezza prospettica a quella quota) */
 function pickTile(ev){
   const rect = cv.getBoundingClientRect();
   const x = (ev.clientX - rect.left) * (cv.width / rect.width);
   const y = (ev.clientY - rect.top) * (cv.height / rect.height);
-  const a = (x - OX) / (TW/2), b = (y - OY) / (TH/2);
-  const c = Math.round((a + b) / 2), r = Math.round((b - a) / 2);
+  if(y < YB[0] || y >= YB[8]) return null;
+  let r = 0;
+  while(r < 8 && y >= YB[r+1]) r++;
+  const hw = hwAt(y);
+  const c = Math.floor((x - (CX - hw)) / (2 * hw / 8));
   return ON(r, c) ? IX(r, c) : null;
 }
 
@@ -630,7 +674,6 @@ cv.addEventListener('pointerdown', (ev) => {
 /* undoFull(): annulla mossa CPU + mossa umana */
 function undoFull(){
   if(thinking || !history.length) return;
-  // togli mezze mosse finché non tocca di nuovo al bianco
   do {
     history.pop();
     rebuildFromHistory();
@@ -672,7 +715,6 @@ function buildMenu(name){
   if(name === 'move') return [
     { t:'Hint', fn(){
         if(gameOver || thinking || turn !== 'w') return;
-        // cerca una buona mossa per il bianco e mostrala come selezione
         const moves = legalAll('w');
         if(!moves.length) return;
         let best = moves[0], bestV = -Infinity;
@@ -694,12 +736,16 @@ function buildMenu(name){
   ];
   if(name === 'settings') return [
     { t:'Sound',      check: sndOn,     fn(){ sndOn = !sndOn; } },
-    { t:'Show Moves', check: showMoves, fn(){ showMoves = !showMoves; sel = null; targets = []; render(); } },
+    { t:'Show Moves', check: showMoves, fn(){ showMoves = !showMoves; render(); } },
   ];
   if(name === 'level') return [1,2,3].map((l) => ({
     t: LEVELS[l], check: aiLevel === l,
     fn(){ aiLevel = l; stLvl.textContent = 'LEVEL: ' + LEVELS[l]; },
   }));
+  if(name === 'modem') return [
+    { t:'Dial Opponent…', fn(){ showDialog('MODEM', 'ATDT 0x4C5A5959…\nNO CARRIER.'); } },
+    { t:'Hang Up', fn(){ showDialog('MODEM', 'Non eri connesso.'); } },
+  ];
   return [];
 }
 
