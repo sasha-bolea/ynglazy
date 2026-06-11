@@ -216,15 +216,20 @@ function playSecretDrone(){
 
 /* =========================================================
    [CORROTTO].PRJ — glitch psichedelico fullscreen (~33s).
-   Canvas low-res scalato a tutto schermo: plasma HSV, statica,
-   corruzione a blocchi, tearing di righe. Le fasi alternano
-   resa pixelata e liscia. Testo glitch in mix-blend difference.
+   Chiede al desktop (postMessage) di portare la finestra a
+   schermo intero. Canvas low-res scalato: 6 modalità che si
+   alternano ogni 3.3s — plasma, statica, tunnel, melt, barre,
+   zigzag — con resa pixelata/liscia alternata, corruzione a
+   blocchi e tearing. Testo glitch in mix-blend difference.
    ========================================================= */
 let corruptRunning = false;
 function runCorrupt(){
   if(corruptRunning) return;
   corruptRunning = true;
-  const W = 96, H = 60, DUR = 33000;
+  const W = 96, H = 60, DUR = 33000, MODE_MS = 3300;
+
+  // chiedi al desktop di allargare la finestra a tutto schermo
+  try{ parent.postMessage({ type: 'lzyyy-glitch', on: true }, '*'); }catch(err){}
 
   const ov = document.createElement('canvas');
   ov.width = W; ov.height = H;
@@ -251,37 +256,91 @@ function runCorrupt(){
     const k = (n + h / 60) % 6;
     return 255 * (1 - Math.max(0, Math.min(k, 4 - k, 1))) | 0;
   }
+  // put(i,h,lum): pixel colorato in img — h tinta, lum 0..1
+  function put(i, h, lum){
+    const hh = (h % 360 + 360) % 360;
+    d[i] = ch(hh, 5) * lum | 0; d[i+1] = ch(hh, 3) * lum | 0;
+    d[i+2] = ch(hh, 1) * lum | 0; d[i+3] = 255;
+  }
+
+  /* — modalità glitch: una funzione per tipo — */
+  // plasma: onde sinusoidali sovrapposte, tinta rotante
+  function mPlasma(t){
+    for(let i = 0, y = 0; y < H; y++) for(let x = 0; x < W; x++, i += 4){
+      const v = Math.sin(x * .19 + t * 2.1) + Math.sin(y * .23 - t * 1.7) +
+                Math.sin((x + y) * .11 + t * 2.9) +
+                Math.sin(Math.hypot(x - W / 2, y - H / 2) * .3 - t * 3.4);
+      put(i, v * 45 + t * 130, 1);
+    }
+    g.putImageData(img, 0, 0);
+  }
+  // statica: neve b/n mista a fosfori verdi
+  function mStatic(){
+    for(let i = 0; i < d.length; i += 4){
+      if(Math.random() < .6){ const k = Math.random() * 255 | 0; d[i] = d[i+1] = d[i+2] = k; }
+      else { d[i] = 40; d[i+1] = Math.random() * 255 | 0; d[i+2] = 40; }
+      d[i+3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+  }
+  // tunnel: anelli concentrici torti che risucchiano
+  function mTunnel(t){
+    for(let i = 0, y = 0; y < H; y++) for(let x = 0; x < W; x++, i += 4){
+      const dx = x - W / 2, dy = y - H / 2;
+      put(i, Math.hypot(dx, dy) * 16 - t * 280 + Math.atan2(dy, dx) * 80, 1);
+    }
+    g.putImageData(img, 0, 0);
+  }
+  // melt: il frame precedente cola in basso a colonne irregolari
+  function mMelt(t){
+    for(let x = 0; x < W; x += 4){
+      const fall = 1 + (Math.random() * 3 | 0);
+      g.drawImage(ov, x, 0, 4, H - fall, x, fall, 4, H - fall);
+    }
+    for(let n = 0; n < 12; n++){              // gocce nuove in alto
+      g.fillStyle = `hsl(${(t * 120 + n * 30) % 360},100%,55%)`;
+      g.fillRect(Math.random() * W | 0, 0, 2 + Math.random() * 6 | 0, 2);
+    }
+  }
+  // barre: colonne colorate + banda di sync nera che scorre
+  function mBars(t){
+    for(let i = 0, y = 0; y < H; y++){
+      const sync = ((y + t * 45) % H + H) % H < 5;
+      for(let x = 0; x < W; x++, i += 4){
+        if(sync){ d[i] = d[i+1] = d[i+2] = 0; d[i+3] = 255; continue; }
+        put(i, x * 12 + t * 160, .5 + .5 * Math.sin(y * .4 + t * 7));
+      }
+    }
+    g.putImageData(img, 0, 0);
+  }
+  // zigzag: strisce diagonali deformate a onda
+  function mZigzag(t){
+    for(let i = 0, y = 0; y < H; y++){
+      const off = Math.sin(y * .3 + t * 5) * 18;
+      for(let x = 0; x < W; x++, i += 4)
+        put(i, (x + off) * 9 - t * 140, ((x + off + y) & 7) < 2 ? .25 : 1);
+    }
+    g.putImageData(img, 0, 0);
+  }
+  const MODES = [mPlasma, mStatic, mTunnel, mMelt, mBars, mZigzag];
 
   const t0 = performance.now();
   function frame(now){
     const t = (now - t0) / 1000;
     if(now - t0 >= DUR) return end();
-    const phase = Math.floor(t / 2.4) % 5;
-    // fasi pari pixelate, dispari lisce
-    ov.style.imageRendering = phase % 2 === 0 ? 'pixelated' : 'auto';
+    const slot = Math.floor((now - t0) / MODE_MS);
+    // slot pari pixelati, dispari lisci
+    ov.style.imageRendering = slot % 2 === 0 ? 'pixelated' : 'auto';
+    MODES[slot % MODES.length](t);
 
-    // plasma psichedelico + statica crescente con la fase
-    const noise = phase === 1 || phase === 4 ? 0.5 : 0.08;
-    for(let i = 0, y = 0; y < H; y++){
-      for(let x = 0; x < W; x++, i += 4){
-        let v = Math.sin(x * .19 + t * 2.1) + Math.sin(y * .23 - t * 1.7) +
-                Math.sin((x + y) * .11 + t * 2.9) +
-                Math.sin(Math.hypot(x - W / 2, y - H / 2) * .3 - t * 3.4);
-        if(Math.random() < noise) v = Math.random() * 8 - 4;   // statica
-        const h = ((v * 45 + t * 130) % 360 + 360) % 360;
-        d[i] = ch(h, 5); d[i+1] = ch(h, 3); d[i+2] = ch(h, 1); d[i+3] = 255;
-      }
-    }
-    g.putImageData(img, 0, 0);
-
-    // corruzione a blocchi: rettangoli copiati altrove
-    for(let n = 0; n < 6; n++){
+    // corruzione a blocchi su qualunque modalità
+    for(let n = 0; n < 5; n++){
       const bw = 8 + Math.random() * 30 | 0, bh = 3 + Math.random() * 12 | 0;
       g.drawImage(ov, Math.random()*(W-bw)|0, Math.random()*(H-bh)|0, bw, bh,
                       Math.random()*(W-bw)|0, Math.random()*(H-bh)|0, bw, bh);
     }
-    // tearing: righe shiftate in orizzontale
-    if(phase >= 2){
+    // tearing nelle modalità lisce
+    if(slot % 2 === 1){
       for(let n = 0; n < 8; n++){
         const y = Math.random() * H | 0;
         g.drawImage(ov, 0, y, W, 1, Math.sin(t * 9 + y) * 14 | 0, y, W, 1);
@@ -294,6 +353,7 @@ function runCorrupt(){
     clearInterval(labelTimer);
     ov.remove(); label.remove();
     corruptRunning = false;
+    try{ parent.postMessage({ type: 'lzyyy-glitch', on: false }, '*'); }catch(err){}
     print('&nbsp;');
     print('[CORROTTO].prj — esecuzione terminata. 33.0s', 'am');
     print('non chiedere cosa hai appena visto.', 'dim');

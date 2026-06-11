@@ -414,3 +414,21 @@
     text-align: center;
   }
 }
+
+/* =========================================================
+   Glitch fullscreen — la finestra che lo richiede copre tutto
+   (sopra taskbar e altre finestre). Dichiarato dopo il blocco
+   mobile per vincere sui suoi !important.
+   ========================================================= */
+.win.glitch-full {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 99999 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.win.glitch-full .win-title { display: none; }
+.win.glitch-full .win-body { height: 100% !important; flex: 1; }

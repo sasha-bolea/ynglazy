@@ -311,9 +311,25 @@
     loadProjectIcons();                      // poi aggiorna dai dati vivi
     startClock();
     setupHomeButton();
+    listenGlitch();
     document.getElementById('desktop').addEventListener('click', deselectOnVoid);
     // All'avvio apre il Browser (solo su desktop — su mobile l'utente sceglie dall'icona)
     if (!isMobile()) openApp(ICONS.find((i) => i.app === 'browser'));
+  }
+
+  /* -----------------------------------------------------------
+     listenGlitch(): un'app (terminale) chiede via postMessage di
+     portare la propria finestra a schermo intero per il glitch.
+     { type:'lzyyy-glitch', on:true|false }
+     ----------------------------------------------------------- */
+  function listenGlitch() {
+    window.addEventListener('message', (e) => {
+      if (!e.data || e.data.type !== 'lzyyy-glitch') return;
+      document.querySelectorAll('.win iframe').forEach((f) => {
+        if (f.contentWindow === e.source)
+          f.closest('.win').classList.toggle('glitch-full', !!e.data.on);
+      });
+    });
   }
 
   /* -----------------------------------------------------------
