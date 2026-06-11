@@ -135,6 +135,14 @@ const FILES = {
   'password.txt':    'bella prova.',
 };
 
+/* --- cestino: file eliminati, ripristinabili con restore.
+       null = il file rifiuta di tornare --- */
+const TRASH = {
+  'ventilatore.wav':             '[stream audio non montato — 6h00m00s]',
+  'demo_v9_DEFINITIVO_vero.wav': '[demo n.9. definitiva. vera. corrotta.]',
+  '[CORROTTO].prj':              null,
+};
+
 /* --- tracce reali → file .wav (sorgente viva: data/discography.json) --- */
 const FALLBACK_PROJECTS = [
   { name:'#FFFFFF', type:'album', date:'2026-03-13',
@@ -225,6 +233,8 @@ const COMMANDS = {
           '  <span class="am">play</span>      apri spotify\n' +
           '  <span class="am">date</span>      data di sistema\n' +
           '  <span class="am">echo</span> &lt;txt&gt;  ripeti\n' +
+          '  <span class="am">trash</span>     guarda nel cestino\n' +
+          '  <span class="am">restore</span> &lt;file&gt;  ripristina dal cestino\n' +
           '  <span class="am">clear</span>     pulisci lo schermo');
     print('(non è la lista completa)', 'dim');
   },
@@ -253,6 +263,28 @@ const COMMANDS = {
     print(`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} · 1987-03-14 <span class="dim">(orologio di sistema non sincronizzato)</span>`);
   },
   echo(args){ print(esc(args.join(' ')) || '&nbsp;'); },
+  trash(){
+    const names = Object.keys(TRASH);
+    if(!names.length) return print('il cestino è vuoto. per ora.', 'dim');
+    print('contenuto del cestino:', 'dim');
+    print(names.map(esc).join('\n'));
+    print('usa <span class="am">restore</span> &lt;file&gt; per ripristinare', 'dim');
+  },
+  restore(args){
+    const f = args.join(' ');
+    if(!f) return print('restore: serve un nome file', 'err');
+    // match permissivo: minuscole, ignora parentesi/underscore non digitabili
+    const norm = (s) => s.toLowerCase().replace(/[^a-z0-9.]/g, '');
+    const key = Object.keys(TRASH).find((k) => norm(k) === norm(f));
+    if(!key) return print(`restore: ${esc(f)}: non è nel cestino`, 'err');
+    if(TRASH[key] === null){
+      print(`restore: ${esc(key)}: il file rifiuta di tornare`, 'err');
+      return print('(alcune cose vogliono restare eliminate)', 'dim');
+    }
+    FILES[key] = TRASH[key];
+    delete TRASH[key];
+    print(`${esc(key)} ripristinato.`, 'am');
+  },
   clear(){ out.innerHTML = ''; },
   sudo(){ print('no.', 'am'); },
   exit(){ print('non si esce da LZYYY_SYS.', 'dim'); },
