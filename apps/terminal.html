@@ -136,6 +136,49 @@ const FILES = {
   'ventilatore.wav': '[stream audio non montato — 6h00m00s]',
 };
 
+/* --- tracce reali → file .wav (sorgente viva: data/discography.json) --- */
+const FALLBACK_PROJECTS = [
+  { name:'#FFFFFF', type:'album', date:'2026-03-13',
+    tracks:[
+      { name:'<grz>', ms:133718, url:'https://open.spotify.com/track/2QiqQWyhN6EJkmD9yKe3aV' },
+      { name:'mare', ms:168348, url:'https://open.spotify.com/track/5pCCUb0VwCIFR7ffyhlOWx' },
+      { name:'987', ms:223741, url:'https://open.spotify.com/track/4UihCMqZ8LZ3EgaeulpdZd' },
+      { name:'sanguini', ms:169495, url:'https://open.spotify.com/track/47X0Elw50hDXurjfcggfVs' },
+      { name:'non è un interludio(interludio)', ms:252415, url:'https://open.spotify.com/track/3jDx4C0RoIPFW2LDNBdNhg' },
+      { name:'cura_)', ms:119687, url:'https://open.spotify.com/track/4CYM7aEsVioKp2QZ2oIVH6' },
+      { name:'Matematica', ms:167191, url:'https://open.spotify.com/track/4FasIwPeaFlUAEDborcmtp' },
+      { name:'<\\bestia>', ms:222843, url:'https://open.spotify.com/track/2bTRIQSTiT2CRexGycuZCb' },
+    ]},
+  { name:'Non c’è pace', type:'single', date:'2025-10-31',
+    tracks:[ { name:'Non c\'è pace', ms:152816, url:'https://open.spotify.com/track/3cKZtd1cI9N5sVMofMFfJS' } ]},
+];
+
+/* slug(name): nome traccia → nome file digitabile dalla tastiera
+   virtuale (minuscole, niente accenti né simboli) */
+function slug(name){
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.wav';
+}
+/* dur(ms): ms → m:ss */
+function dur(ms){
+  const s = Math.round(ms / 1000);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+/* mountTracks(projects): monta le tracce in FILES come { meta, url } */
+function mountTracks(projects){
+  projects.forEach((p) => p.tracks.forEach((t) => {
+    FILES[slug(t.name)] = {
+      meta: `${t.name}\nprogetto: ${p.name} (${p.type}, ${p.date})\ndurata: ${dur(t.ms)} · dim: ${t.ms % 847} TB · mono emotivo`,
+      url: t.url,
+    };
+  }));
+}
+mountTracks(FALLBACK_PROJECTS);
+fetch('../data/discography.json')
+  .then((r) => r.json())
+  .then((d) => mountTracks(d.projects))
+  .catch(() => {});
+
 /* --- audio nascosto per `secret` (EE-05): drone generato --- */
 let actx = null;
 function playSecretDrone(){
@@ -193,8 +236,13 @@ const COMMANDS = {
     if(!f) return print('cat: serve un nome file', 'err');
     // match case-insensitive: la tastiera virtuale ha solo minuscole
     const key = Object.keys(FILES).find((k) => k.toLowerCase() === f.toLowerCase());
-    if(key) print(esc(FILES[key]));
-    else print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
+    if(!key) return print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
+    const v = FILES[key];
+    if(typeof v === 'string') return print(esc(v));
+    // traccia reale: metadata fake + apertura spotify
+    print(esc(v.meta));
+    print(`▶ apertura spotify… <a href="${v.url}" target="_blank" rel="noopener">link manuale</a>`);
+    window.open(v.url, '_blank', 'noopener');
   },
   play(){
     print(`▶ apertura spotify… <a href="${SPOTIFY}" target="_blank" rel="noopener">link manuale</a>`);
