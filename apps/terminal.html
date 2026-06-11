@@ -228,6 +228,11 @@ function runCorrupt(){
   if(corruptRunning) return;
   corruptRunning = true;
   const W = 96, H = 60, DUR = 33000, MODE_MS = 2750;
+  const IMG_MS = 9000;     // da qui in poi compaiono le immagini
+
+  // immagini glitchate: joint al centro, foglie agli angoli
+  const joint = new Image(); joint.src = '../img/joint.png';
+  const leaf  = new Image(); leaf.src  = '../img/leaf.png';
 
   // chiedi al desktop di allargare la finestra a tutto schermo
   try{ parent.postMessage({ type: 'lzyyy-glitch', on: true }, '*'); }catch(err){}
@@ -394,6 +399,31 @@ function runCorrupt(){
   const MODES = [mPlasma, mStatic, mTunnel, mMelt, mBars, mRain,
                  mKaleido, mRGBSplit, mZigzag, mWarp, mMoire, mCheckers];
 
+  /* drawImgGlitched(im, cx, cy, size, rot): immagine ruotata con
+     glitch assurdi — jitter di posizione, scatti di scala, tinte
+     casuali, inversioni, doppi fantasma in additive */
+  function drawImgGlitched(im, cx, cy, size, rot){
+    if(!im.complete || !im.naturalWidth) return;
+    const j = () => (Math.random() * 4 - 2) | 0;
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(rot);
+    const r = Math.random();
+    if(r < .25) g.filter = `hue-rotate(${Math.random()*360|0}deg) saturate(${2+Math.random()*6})`;
+    else if(r < .4) g.filter = 'invert(1)';
+    const s = size * (.85 + Math.random() * .4);
+    g.globalAlpha = .9;
+    g.drawImage(im, -s / 2 + j(), -s / 2 + j(), s, s);
+    // fantasmi sdoppiati in additive
+    g.globalCompositeOperation = 'lighter';
+    g.globalAlpha = .3;
+    g.filter = 'hue-rotate(120deg)';
+    g.drawImage(im, -s / 2 + 2 + j(), -s / 2, s, s);
+    g.filter = 'hue-rotate(240deg)';
+    g.drawImage(im, -s / 2 - 2, -s / 2 + j(), s, s);
+    g.restore();
+  }
+
   const t0 = performance.now();
   function frame(now){
     const t = (now - t0) / 1000;
@@ -402,6 +432,17 @@ function runCorrupt(){
     // slot pari pixelati, dispari lisci
     ov.style.imageRendering = slot % 2 === 0 ? 'pixelated' : 'auto';
     MODES[slot % MODES.length](t);
+
+    // da IMG_MS in poi: joint rotante al centro, foglie agli angoli
+    // (controrotanti) — poi i blocchi/tearing le corrompono insieme al resto
+    if(now - t0 >= IMG_MS){
+      drawImgGlitched(joint, W / 2, H / 2, 44, t * 1.4);
+      const lr = t * 2.6;
+      drawImgGlitched(leaf, 10,     8,     18,  lr);
+      drawImgGlitched(leaf, W - 10, 8,     18, -lr);
+      drawImgGlitched(leaf, 10,     H - 8, 18, -lr);
+      drawImgGlitched(leaf, W - 10, H - 8, 18,  lr);
+    }
 
     // corruzione a blocchi su qualunque modalità
     for(let n = 0; n < 5; n++){
