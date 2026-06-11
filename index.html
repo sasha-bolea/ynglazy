@@ -10,9 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style/base.css">
-  <link rel="stylesheet" href="style/boot.css">
-  <link rel="stylesheet" href="style/desktop.css">
+  <!-- ?v=2: cache-bust — le versioni precedenti erano servite "immutable" -->
+  <link rel="stylesheet" href="style/base.css?v=2">
+  <link rel="stylesheet" href="style/boot.css?v=2">
+  <link rel="stylesheet" href="style/desktop.css?v=2">
 </head>
 <body>
 
@@ -54,8 +55,8 @@
   <!-- Overlay CRT globale (scanline + flicker), sopra tutto, non cliccabile -->
   <div id="crt-overlay"></div>
 
-  <script src="js/desktop.js"></script>
-  <script src="js/easter-eggs.js"></script>
-  <script src="js/boot.js"></script>
+  <script src="js/desktop.js?v=2"></script>
+  <script src="js/easter-eggs.js?v=2"></script>
+  <script src="js/boot.js?v=2"></script>
 </body>
 </html>
