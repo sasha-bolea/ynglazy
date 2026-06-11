@@ -162,6 +162,21 @@ const listEl  = document.getElementById('fm-list');
 const pathEl  = document.getElementById('fm-path');
 const countEl = document.getElementById('fm-count');
 
+/* --- stato cestino condiviso col terminale (sessionStorage,
+       vive fino alla chiusura del tab) --- */
+function normName(s){ return String(s).toLowerCase().replace(/[^a-z0-9.]/g, ''); }
+function getRestored(){
+  try{ return JSON.parse(sessionStorage.getItem('lzyyy-restored')) || []; }
+  catch(err){ return []; }
+}
+/* contenuto del cestino: i restore fatti nel terminale spostano
+   il file in Download finché il tab resta aperto */
+const CESTINO = [
+  { name:'[CORROTTO].prj',              kind:'corrupt', dim:'-1 B',  date:'0000-00-00' },
+  { name:'demo_v9_DEFINITIVO_vero.wav', kind:'corrupt', dim:'NaN',   date:'1990-01-01' },
+  { name:'ventilatore.wav',             kind:'sample',  dim:'∞',     date:'1984-08-08' },
+];
+
 /* esc(s): escape HTML (nomi tipo <grz> contengono < >) */
 function esc(s){
   return String(s).replace(/[&<>"]/g, (c) =>
@@ -184,14 +199,19 @@ function projectsToNodes(projects){
   }));
 }
 
-/* buildTree(): cartelle utente standard. I progetti vanno in Desktop. */
+/* buildTree(): cartelle utente standard. I progetti vanno in Desktop.
+   Il Cestino rispetta i restore fatti dal terminale. */
 function buildTree(){
+  const restored  = getRestored();
+  const inTrash   = CESTINO.filter((n) => !restored.includes(normName(n.name)));
+  const recovered = CESTINO.filter((n) =>  restored.includes(normName(n.name)));
   TREE = [
     { name:'Desktop',  kind:'folder', children: projectsToNodes(PROJECTS) },
     { name:'Download',  kind:'folder', children:[
       { name:'sample_pack_847.zip', kind:'corrupt', dim:'847 TB', date:'1987-03-14' },
       { name:'ventilatore_6h.wav',  kind:'sample',  dim:'6.0 GB', date:'1984-08-08' },
       { name:'frigo_3am.wav',       kind:'sample',  dim:'333 MB', date:'2003-03-03' },
+      ...recovered,
     ]},
     { name:'Documenti', kind:'folder', children:[
       { name:'README.txt',          kind:'file', dim:'1.2 KB', date:'1987-03-14' },
@@ -204,12 +224,16 @@ function buildTree(){
     { name:'Video',     kind:'folder', children:[
       { name:'live_glitch.mp4', kind:'video', dim:'∞', date:'2025-01-01' },
     ]},
-    { name:'Cestino',   kind:'folder', children:[
-      { name:'[CORROTTO].prj',              kind:'corrupt', dim:'-1 B', date:'0000-00-00' },
-      { name:'demo_v9_DEFINITIVO_vero.wav', kind:'corrupt', dim:'NaN',  date:'1990-01-01' },
-    ]},
+    { name:'Cestino',   kind:'folder', children: inTrash },
   ];
 }
+
+/* restore dal terminale mentre il file manager è aperto:
+   l'evento storage arriva dagli altri iframe dello stesso tab */
+window.addEventListener('storage', (e) => {
+  if(e.key !== 'lzyyy-restored') return;
+  buildTree(); renderTree(); renderList();
+});
 
 /* listAt(p): elenco figli al percorso p */
 function listAt(p){

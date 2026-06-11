@@ -149,6 +149,23 @@ const TRASH = {
   '[CORROTTO].prj':              { corrupt: true },
 };
 
+/* --- stato cestino condiviso (sessionStorage, vive fino alla
+       chiusura del tab): riapplica i restore già fatti --- */
+const RESTORED_KEY = 'lzyyy-restored';
+function getRestored(){
+  try{ return JSON.parse(sessionStorage.getItem(RESTORED_KEY)) || []; }
+  catch(err){ return []; }
+}
+function markRestored(name){
+  try{
+    sessionStorage.setItem(RESTORED_KEY,
+      JSON.stringify([...new Set([...getRestored(), normName(name)])]));
+  }catch(err){}
+}
+Object.keys(TRASH).forEach((k) => {
+  if(getRestored().includes(normName(k))){ FILES[k] = TRASH[k]; delete TRASH[k]; }
+});
+
 /* --- tracce reali → file .wav (sorgente viva: data/discography.json) --- */
 const FALLBACK_PROJECTS = [
   { name:'#FFFFFF', type:'album', date:'2026-03-13',
@@ -611,6 +628,7 @@ const COMMANDS = {
     if(!key) return print(`restore: ${esc(f)}: non è nel cestino`, 'err');
     FILES[key] = TRASH[key];
     delete TRASH[key];
+    markRestored(key);          // condiviso col file manager via sessionStorage
     if(FILES[key] && FILES[key].corrupt){
       print(`…qualcosa si è opposto. ${esc(key)} ripristinato comunque.`, 'err');
       return print('non avresti dovuto.', 'dim');
