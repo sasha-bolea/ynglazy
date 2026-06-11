@@ -122,6 +122,12 @@ function print(html, cls){
   out.appendChild(d);
   out.scrollTop = out.scrollHeight;
 }
+/* normName(s): confronto permissivo dei nomi file — minuscole,
+   ignora parentesi/underscore/trattini non digitabili da tastiera
+   virtuale. '[CORROTTO].prj' ≡ 'corrotto.prj' */
+function normName(s){
+  return String(s).toLowerCase().replace(/[^a-z0-9.]/g, '');
+}
 /* esc(s): escape HTML dell'input utente */
 function esc(s){
   return String(s).replace(/[&<>"]/g, (c) =>
@@ -330,8 +336,8 @@ const COMMANDS = {
   cat(args){
     const f = args.join(' ');
     if(!f) return print('cat: serve un nome file', 'err');
-    // match case-insensitive: la tastiera virtuale ha solo minuscole
-    const key = Object.keys(FILES).find((k) => k.toLowerCase() === f.toLowerCase());
+    // match permissivo: minuscole, parentesi/simboli opzionali
+    const key = Object.keys(FILES).find((k) => normName(k) === normName(f));
     if(!key) return print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
     const v = FILES[key];
     if(typeof v === 'string') return print(esc(v));
@@ -367,9 +373,8 @@ const COMMANDS = {
   restore(args){
     const f = args.join(' ');
     if(!f) return print('restore: serve un nome file', 'err');
-    // match permissivo: minuscole, ignora parentesi/underscore non digitabili
-    const norm = (s) => s.toLowerCase().replace(/[^a-z0-9.]/g, '');
-    const key = Object.keys(TRASH).find((k) => norm(k) === norm(f));
+    // match permissivo: minuscole, parentesi/simboli opzionali
+    const key = Object.keys(TRASH).find((k) => normName(k) === normName(f));
     if(!key) return print(`restore: ${esc(f)}: non è nel cestino`, 'err');
     FILES[key] = TRASH[key];
     delete TRASH[key];
