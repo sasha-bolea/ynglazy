@@ -79,6 +79,7 @@ body::after{
 }
 #kbd button.sp{ color:var(--am); text-shadow:var(--glow-am); max-width:64px; }
 #kbd button.wide{ max-width:none; flex:5; }
+#kbd button.enter{ flex:2.5; max-width:110px; }
 #kbd button:active{ background:var(--ph); color:var(--black); text-shadow:none; }
 /* tastiera virtuale solo su touch: su desktop c'è quella fisica */
 @media (pointer: fine){
@@ -282,6 +283,7 @@ function buildKbd(){
       b.textContent = label;
       b.dataset.k = action || label;
       if(action) b.classList.add(action === 'SPACE' ? 'wide' : 'sp');
+      if(action === 'ENTER') b.classList.add('enter');
       r.appendChild(b);
     });
     kbd.appendChild(r);
