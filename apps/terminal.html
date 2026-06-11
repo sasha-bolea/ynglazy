@@ -498,9 +498,40 @@ function runCorrupt(){
     try{ parent.postMessage({ type: 'lzyyy-glitch', on: false }, '*'); }catch(err){}
     print('&nbsp;');
     print('[CORROTTO].prj — esecuzione terminata. 33.0s', 'am');
-    print('non chiedere cosa hai appena visto.', 'dim');
+    print('ERRORE: memoria di sistema compromessa', 'err');
+    // crash di sistema: lo mostra il desktop; standalone → fallback locale
+    setTimeout(() => {
+      if(window.parent !== window){
+        try{ parent.postMessage({ type: 'lzyyy-crash' }, '*'); }catch(err){}
+      } else {
+        localCrash();
+      }
+    }, 1500);
   }
   requestAnimationFrame(frame);
+}
+
+/* localCrash(): errore fatale quando il terminale gira da solo
+   (senza desktop): overlay nero + riavvio al primo input */
+function localCrash(){
+  if(document.getElementById('crash-local')) return;
+  const el = document.createElement('div');
+  el.id = 'crash-local';
+  el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#0c0c0b;color:var(--ph);' +
+    "display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;" +
+    'font-size:14px;line-height:1.9;cursor:crosshair;text-shadow:0 0 4px rgba(212,245,160,.55)';
+  el.innerHTML = '<div style="max-width:560px;padding:24px">' +
+    '<span style="background:var(--ph);color:#0c0c0b;padding:2px 10px;text-shadow:none">*** ERRORE FATALE ***</span><br><br>' +
+    'LZYYY_SYS — eccezione 0x4C5A5959 in [CORROTTO].PRJ<br>' +
+    'la memoria di sistema è stata compromessa.<br><br>' +
+    'è necessario riavviare il sistema.<br><br>' +
+    'premi un tasto o tocca lo schermo per riavviare</div>';
+  document.body.appendChild(el);
+  const reboot = () => location.reload();
+  setTimeout(() => {
+    window.addEventListener('keydown', reboot, { once: true });
+    el.addEventListener('pointerdown', reboot, { once: true });
+  }, 1200);
 }
 
 /* --- EE rm -rf: pioggia di errori finti, poi rientro --- */

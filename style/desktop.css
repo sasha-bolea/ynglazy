@@ -432,3 +432,37 @@
 }
 .win.glitch-full .win-title { display: none; }
 .win.glitch-full .win-body { height: 100% !important; flex: 1; }
+
+/* =========================================================
+   Crash screen — errore fatale fullscreen, sopra qualsiasi cosa
+   ========================================================= */
+#crash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: #0c0c0b;
+  color: var(--ph);
+  font-family: var(--f-micro), monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: crosshair;
+}
+#crash-screen .crash-box {
+  max-width: 560px;
+  padding: 24px;
+  font-size: 14px;
+  line-height: 1.9;
+  text-shadow: 0 0 4px rgba(212, 245, 160, 0.55);
+}
+#crash-screen .crash-title {
+  display: inline-block;
+  background: var(--ph);
+  color: #0c0c0b;
+  padding: 2px 10px;
+  margin-bottom: 16px;
+  text-shadow: none;
+  letter-spacing: 1px;
+}
+#crash-screen .blink { animation: crash-blink 1s steps(2) infinite; }
+@keyframes crash-blink { 50% { opacity: 0; } }

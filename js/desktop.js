@@ -324,12 +324,40 @@
      ----------------------------------------------------------- */
   function listenGlitch() {
     window.addEventListener('message', (e) => {
-      if (!e.data || e.data.type !== 'lzyyy-glitch') return;
+      if (!e.data) return;
+      if (e.data.type === 'lzyyy-crash') return showCrashScreen();
+      if (e.data.type !== 'lzyyy-glitch') return;
       document.querySelectorAll('.win iframe').forEach((f) => {
         if (f.contentWindow === e.source)
           f.closest('.win').classList.toggle('glitch-full', !!e.data.on);
       });
     });
+  }
+
+  /* -----------------------------------------------------------
+     showCrashScreen(): errore fatale a tutto schermo. Si esce
+     solo riavviando il sistema (reload → sequenza di boot).
+     ----------------------------------------------------------- */
+  function showCrashScreen() {
+    if (document.getElementById('crash-screen')) return;
+    const el = document.createElement('div');
+    el.id = 'crash-screen';
+    el.innerHTML =
+      '<div class="crash-box">' +
+      '<span class="crash-title">*** ERRORE FATALE ***</span><br>' +
+      'LZYYY_SYS — eccezione 0x4C5A5959 in [CORROTTO].PRJ<br><br>' +
+      'la memoria di sistema è stata compromessa.<br>' +
+      'il kernel ha smesso di rispondere. forse non è mai esistito.<br><br>' +
+      'è necessario riavviare il sistema.<br><br>' +
+      'premi un tasto o tocca lo schermo per riavviare <span class="blink">█</span>' +
+      '</div>';
+    document.body.appendChild(el);
+    const reboot = () => location.reload();
+    // breve attesa: evita riavvii accidentali col tap che chiudeva il glitch
+    setTimeout(() => {
+      window.addEventListener('keydown', reboot, { once: true });
+      el.addEventListener('pointerdown', reboot, { once: true });
+    }, 1200);
   }
 
   /* -----------------------------------------------------------
