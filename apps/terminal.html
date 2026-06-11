@@ -259,6 +259,10 @@ cmd.addEventListener('keydown', (e) => {
    ========================================================= */
 const kbd = document.getElementById('kbd');
 const kbdToggle = document.getElementById('kbd-toggle');
+
+/* su touch l'input non apre mai la tastiera nativa: si usa solo quella virtuale */
+const TOUCH = window.matchMedia('(pointer: coarse)').matches;
+if(TOUCH) cmd.setAttribute('inputmode', 'none');
 const KBD_ROWS = [
   ['1','2','3','4','5','6','7','8','9','0','⌫:BKSP'],
   ['q','w','e','r','t','y','u','i','o','p','-'],
@@ -305,6 +309,14 @@ kbdToggle.addEventListener('pointerup', (e) => {
   e.stopPropagation();
   kbd.classList.toggle('hidden');
   kbdToggle.classList.toggle('on', !kbd.classList.contains('hidden'));
+});
+
+/* su touch, tap sull'input con tastiera virtuale chiusa → riaprila */
+cmd.addEventListener('pointerup', () => {
+  if(TOUCH && kbd.classList.contains('hidden')){
+    kbd.classList.remove('hidden');
+    kbdToggle.classList.add('on');
+  }
 });
 
 /* tap/click ovunque → focus sull'input (apre la tastiera su mobile) */

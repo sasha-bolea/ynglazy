@@ -377,6 +377,8 @@
     top: 0 !important;
     width: 100% !important;
     height: calc(100vh - var(--taskbar-h)) !important;
+    /* dvh = viewport reale (esclude la barra del browser): senza, il fondo è tagliato */
+    height: calc(100dvh - var(--taskbar-h)) !important;
     min-width: unset !important;
     box-shadow: none !important;
     border-left: none !important;
