@@ -352,7 +352,11 @@
       'premi un tasto o tocca lo schermo per riavviare <span class="blink">█</span>' +
       '</div>';
     document.body.appendChild(el);
-    const reboot = () => location.reload();
+    // il riavvio resetta anche lo stato del cestino: sistema pulito
+    const reboot = () => {
+      try { sessionStorage.removeItem('lzyyy-restored'); } catch (err) {}
+      location.reload();
+    };
     // breve attesa: evita riavvii accidentali col tap che chiudeva il glitch
     setTimeout(() => {
       window.addEventListener('keydown', reboot, { once: true });
