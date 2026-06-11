@@ -399,6 +399,26 @@ function runCorrupt(){
   const MODES = [mPlasma, mStatic, mTunnel, mMelt, mBars, mRain,
                  mKaleido, mRGBSplit, mZigzag, mWarp, mMoire, mCheckers];
 
+  /* fumo dal joint: particelle che salgono dalla punta (che ruota
+     con lui), derivano a onda e svaniscono allargandosi */
+  const smoke = [];
+  function drawSmoke(rot){
+    const off = -44 * .38;                       // punta in coordinate immagine
+    const tx = W / 2 + off * Math.cos(rot) - off * Math.sin(rot);
+    const ty = H / 2 + off * Math.sin(rot) + off * Math.cos(rot);
+    for(let n = 0; n < 2; n++)
+      smoke.push({ x: tx, y: ty, life: 1, ph: Math.random() * 6.28 });
+    for(let i = smoke.length - 1; i >= 0; i--){
+      const p = smoke[i];
+      p.life -= .02;
+      if(p.life <= 0){ smoke.splice(i, 1); continue; }
+      p.y -= .45;
+      p.x += Math.sin(p.ph + p.life * 9) * .5;
+      g.fillStyle = `rgba(230,230,230,${(p.life * .8).toFixed(2)})`;
+      g.fillRect(p.x | 0, p.y | 0, p.life > .6 ? 1 : 2, p.life > .6 ? 1 : 2);
+    }
+  }
+
   /* drawImgGlitched(im, cx, cy, size, rot, clean): immagine ruotata.
      clean=true → resa pulita (solo rotazione). Altrimenti glitch
      assurdi: jitter, scatti di scala, tinte casuali, inversioni,
@@ -445,6 +465,7 @@ function runCorrupt(){
     const clean = now - t0 < IMG_MS + 5000;
     function drawImgs(){
       drawImgGlitched(joint, W / 2, H / 2, 44, t * 1.4, clean);
+      drawSmoke(t * 1.4);
       const lr = t * 2.6;
       drawImgGlitched(leaf, 10,     8,     18,  lr, clean);
       drawImgGlitched(leaf, W - 10, 8,     18, -lr, clean);
