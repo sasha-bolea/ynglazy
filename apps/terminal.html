@@ -191,7 +191,9 @@ const COMMANDS = {
   cat(args){
     const f = args.join(' ');
     if(!f) return print('cat: serve un nome file', 'err');
-    if(FILES[f] !== undefined) print(esc(FILES[f]));
+    // match case-insensitive: la tastiera virtuale ha solo minuscole
+    const key = Object.keys(FILES).find((k) => k.toLowerCase() === f.toLowerCase());
+    if(key) print(esc(FILES[key]));
     else print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
   },
   play(){
