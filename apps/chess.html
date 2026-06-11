@@ -360,266 +360,48 @@ function aiBestMove(){
 }
 
 /* =========================================================
-   SPRITE 1-BIT — pixel art medievale a risoluzione nativa.
+   SPRITE 1-BIT — 14x20, resi a 2x (28x40 a schermo).
    '#'=linea '.'=trasparente 'o'=campitura 'x'=dithering.
    Bianchi (in basso): campitura bianca, linee nere.
    Neri (in alto): campitura nera, linee bianche (inversione).
-   Altezze in gerarchia: pedone 36 → re 46.
    ========================================================= */
 const SPR = {
-p:[ // pedone: soldato — elmo con visiera, braccia, gonnellino di maglia, gambe
-'.....######.....',
-'....#oooooo#....',
-'...#oooooooo#...',
-'...#oooooooo#...',
-'...#o######o#...',
-'...#oooooooo#...',
-'....#oooooo#....',
-'.....##oo##.....',
-'....##oooo##....',
-'..##oooooooo##..',
-'.#oooooooooooo#.',
-'.#oo##oooo##oo#.',
-'#oo#.#oooo#.#oo#',
-'#oo#.#oxxo#.#oo#',
-'#oo#.#oxxo#.#oo#',
-'#oo#.#oooo#.#oo#',
-'####.#oooo#.####',
-'.....#oooo#.....',
-'....#oooooo#....',
-'....#oxooxo#....',
-'...#oxoxxoxo#...',
-'...#xoxooxox#...',
-'..#oxoxxxxoxo#..',
-'..#xoxxxxxxox#..',
-'..#oxxxxxxxxo#..',
-'..############..',
-'...#oo#..#oo#...',
-'...#oo#..#oo#...',
-'...#oo#..#oo#...',
-'...#oo#..#oo#...',
-'...#oo#..#oo#...',
-'...#oo#..#oo#...',
-'..##oo#..#oo##..',
-'..#ooo#..#ooo#..',
-'.#oooo#..#oooo#.',
-'.######..######.'],
-r:[ // torre: muratura con merli, feritoia, cornicioni
-'####..####..####..####',
-'#oo#..#oo#..#oo#..#oo#',
-'#oo####oo####oo####oo#',
-'#oooooooooooooooooooo#',
-'######################',
-'.#oooooooooooooooooo#.',
-'.#oxxoxxoxxoxxoxxoxx#.',
-'.#oooooooooooooooooo#.',
-'.#xxoxxoxxoxxoxxoxxo#.',
-'.#oooooooooooooooooo#.',
-'.#oxxoxxoxxoxxoxxoxx#.',
-'.#oooooooooooooooooo#.',
-'.#xxoxxoxxoxxoxxoxxo#.',
-'.#oooooooooooooooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooo####oooooo#.',
-'.#oooooooooooooooooo#.',
-'.#oxxoxxoxxoxxoxxoxx#.',
-'.#oooooooooooooooooo#.',
-'.#xxoxxoxxoxxoxxoxxo#.',
-'.#oooooooooooooooooo#.',
-'.#oxxoxxoxxoxxoxxoxx#.',
-'.#oooooooooooooooooo#.',
-'.#xxoxxoxxoxxoxxoxxo#.',
-'.#oooooooooooooooooo#.',
-'.#oxxoxxoxxoxxoxxoxx#.',
-'.#oooooooooooooooooo#.',
-'.#oooooooooooooooooo#.',
-'######################',
-'#oooooooooooooooooooo#',
-'#oxoxoxoxoxoxoxoxoxox#',
-'#oooooooooooooooooooo#',
-'#xoxoxoxoxoxoxoxoxoxo#',
-'#oooooooooooooooooooo#',
-'######################',
-'######################'],
-n:[ // cavallo: testa equina con criniera ditherata e pettorale
-'.........####.........',
-'........#oooo#........',
-'.......#oooooo#.......',
-'......#oo#oooo#.......',
-'.....#oooooooo#x#.....',
-'....#oooooooooo#x#....',
-'...#oooooooooooo#x#...',
-'..#oooooooooooooo#x#..',
-'.#ooo##ooooooooo#xx#..',
-'.#oo#..#oooooooo#xx#..',
-'.#oo#..#oooooooo#xx#..',
-'.#ooo##ooooooooo#xx#..',
-'..#####oooooooo#oxx#..',
-'......#ooooooo#oxxx#..',
-'......#oooooo#ooxxx#..',
-'.....#oooooo#oooxxx#..',
-'.....#ooooo#ooooxx#...',
-'....#ooooo#oooooxx#...',
-'....#oooo#ooooooxx#...',
-'...#ooooooooooooxxx#..',
-'...#oooooooooooooxx#..',
-'..#ooooooooooooooxx#..',
-'..#oooooooooooooooxx#.',
-'..#ooooooooooooooooo#.',
-'.#ooooooooooooooooooo#',
-'.#ooooooooooooooooooo#',
-'.#ooooooooooooooooooo#',
-'.#ooooooooooooooooooo#',
-'.#ooooooooooooooooooo#',
-'.#ooooooooooooooooooo#',
-'.#oxxxxxxxxxxxxxxxxxo#',
-'.#ooooooooooooooooooo#',
-'#oooooooooooooooooooo#',
-'#oooooooooooooooooooo#',
-'#oxoxoxoxoxoxoxoxoxox#',
-'#oooooooooooooooooooo#',
-'######################'],
-b:[ // alfiere: mitra con croce, collare, tonaca con pieghe
-'........##........',
-'.......#oo#.......',
-'......#oooo#......',
-'......#o##o#......',
-'.....#oo##oo#.....',
-'.....#o####o#.....',
-'....#ooo##ooo#....',
-'....#ooo##ooo#....',
-'....#oooooooo#....',
-'...#oooooooooo#...',
-'...############...',
-'....#oooooooo#....',
-'....#oooooooo#....',
-'.....#oooooo#.....',
-'....##oooooo##....',
-'...#oooooooooo#...',
-'..#oooooooooooo#..',
-'..#oo#oooooo#oo#..',
-'..#oo#oooooo#oo#..',
-'..#oo#o####o#oo#..',
-'..#oo#oooooo#oo#..',
-'..#oo#oooooo#oo#..',
-'..#o##oooooo##o#..',
-'..#oooooooooooo#..',
-'..#oxooooooooxo#..',
-'..#oxooooooooxo#..',
-'..#oxooooooooxo#..',
-'..#oxooooooooxo#..',
-'.#oxxooooooooxxo#.',
-'.#oxxooooooooxxo#.',
-'.#oxxooooooooxxo#.',
-'.#xxxooooooooxxx#.',
-'.#xxxooooooooxxx#.',
-'.#xxxxooooooxxxx#.',
-'#oxxxxooooooxxxxo#',
-'#oxxxxooooooxxxxo#',
-'#xxxxxooooooxxxxx#',
-'#oooooooooooooooo#',
-'#oxoxoxoxoxoxoxox#',
-'#oooooooooooooooo#',
-'##################'],
-q:[ // regina: corona a cinque punte, velo, abito lungo a pieghe
-'.#...#...##...#...#.',
-'.#...#...##...#...#.',
-'.##..##..##..##..##.',
-'.#o##oo##oo##oo##o#.',
-'.#oooooooooooooooo#.',
-'.#oxoxoxoxoxoxoxox#.',
-'.#oooooooooooooooo#.',
-'..##oooooooooooo##..',
-'..#xo##oooooo##ox#..',
-'..#xo#oooooooo#ox#..',
-'..#xo#oooooooo#ox#..',
-'..#xo#oooooooo#ox#..',
-'..#xx#oooooooo#xx#..',
-'...#x##oooooo##x#...',
-'....#x##oooo##x#....',
-'.....#x#oooo#x#.....',
-'.....#o#oooo#o#.....',
-'....##oooooooo##....',
-'...#oooooooooooo#...',
-'..#oo#oooooooo#oo#..',
-'..#oo#oooooooo#oo#..',
-'..#oo#oxooooxo#oo#..',
-'..#oo#oxooooxo#oo#..',
-'..#o##oooooooo##o#..',
-'...###oooooooo###...',
-'....#oooooooooo#....',
-'....#oxooooooxo#....',
-'...#ooxooooooxoo#...',
-'...#ooxooooooxoo#...',
-'..#oooxooooooxooo#..',
-'..#oooxooooooxooo#..',
-'..#ooxxooooooxxoo#..',
-'.#oooxxooooooxxooo#.',
-'.#oooxxooooooxxooo#.',
-'.#ooxxxooooooxxxoo#.',
-'.#ooxxxooooooxxxoo#.',
-'#oooxxxooooooxxxooo#',
-'#oooxxxooooooxxxooo#',
-'#ooxxxxooooooxxxxoo#',
-'#ooxxxxooooooxxxxoo#',
-'#oxxxxxooooooxxxxxo#',
-'#oooooooooooooooooo#',
-'#oxoxoxoxoxoxoxoxox#',
-'#oooooooooooooooooo#',
-'####################'],
-k:[ // re: croce, corona, barba, mantello con bordo d'ermellino
-'..........##..........',
-'..........##..........',
-'........######........',
-'........######........',
-'..........##..........',
-'..........##..........',
-'..##..##..##..##..##..',
-'..##..##..##..##..##..',
-'..#o##oo##oo##oo##o#..',
-'..#oooooooooooooooo#..',
-'..#oxoxoxoxoxoxoxox#..',
-'..#oooooooooooooooo#..',
-'...##oooooooooooo##...',
-'...#oo##oooooo##oo#...',
-'...#oo#oooooooo#oo#...',
-'...#oo#oooooooo#oo#...',
-'...#oo#oooooooo#oo#...',
-'...#ox#oooooooo#xo#...',
-'....###oxxooxxo###....',
-'.....#oxxxxxxxxo#.....',
-'......#xxxxxxxx#......',
-'...###oooooooooo###...',
-'.#oooooooooooooooooo#.',
-'.#ox#oooooooooooo#xo#.',
-'.#ox#oooooooooooo#xo#.',
-'.#ox#oooooooooooo#xo#.',
-'.#ox#oooooooooooo#xo#.',
-'.#ox#oxooooooooxo#xo#.',
-'.#ox#oxooooooooxo#xo#.',
-'.#ox#oxooooooooxo#xo#.',
-'.#ox#oooooooooooo#xo#.',
-'.#oxx#oooooooooo#xxo#.',
-'.#oxx#oooooooooo#xxo#.',
-'.#oxx#oooooooooo#xxo#.',
-'.#xxx#oooooooooo#xxx#.',
-'.#xxx#oooooooooo#xxx#.',
-'#oxxx#oooooooooo#xxxo#',
-'#oxxx#oooooooooo#xxxo#',
-'#xxxx#oooooooooo#xxxx#',
-'#xxxx#oooooooooo#xxxx#',
-'#oooo#oooooooooo#oooo#',
-'#o##o#oo##oo##oo#o##o#',
-'#oooooooooooooooooooo#',
-'#oxoxoxoxoxoxoxoxoxox#',
-'#oooooooooooooooooooo#',
-'######################'],
+p:[ // pedone: soldato con elmo
+'......##......','.....#oo#.....','....#oooo#....','....#oxxo#....',
+'....#oooo#....','.....#oo#.....','....##oo##....','...#oooooo#...',
+'..#oo#oo#oo#..','..#oooooooo#..','...#oooooo#...','...#oooooo#...',
+'...#oxxxxo#...','...#oooooo#...','....#oooo#....','....#oooo#....',
+'...#oooooo#...','..#oooooooo#..','.#oooooooooo#.','.############.'],
+r:[ // torre: fortificazione merlata
+'####.####.####','#oo#.#oo#.#oo#','#oo###oo###oo#','#oooooooooooo#',
+'.#oooooooooo#.','.#oxoxoxoxox#.','.#oooooooooo#.','.#xoxoxoxoxo#.',
+'.#oooooooooo#.','.#oxoxoxoxox#.','.#oooooooooo#.','.#oooooooooo#.',
+'.#oooooooooo#.','.#oooooooooo#.','.#oooooooooo#.','#oooooooooooo#',
+'#oxxxxxxxxxxo#','#oooooooooooo#','##############','##############'],
+n:[ // cavallo: testa equina
+'.....####.....','....#oooo#....','...#o#ooooo#..','..#ooooooooo#.',
+'..#oo#oooooo#.','.#ooooooooooo#','.#oooo##ooooo#','..##ooo#oooo#.',
+'....#ooo#ooo#.','...#oooo#oo#..','...#ooooo##...','..#ooooooo#...',
+'..#oooooooo#..','..#oooooooo#..','.#oooooooooo#.','.#oooooooooo#.',
+'.#oxxxxxxxxo#.','.#oooooooooo#.','#oooooooooooo#','##############'],
+b:[ // alfiere: mitra
+'......##......','.....#oo#.....','....#oooo#....','...#oo##oo#...',
+'...#oo##oo#...','...#oooooo#...','..#oo####oo#..','..#oooooooo#..',
+'...#oooooo#...','....#oooo#....','.....#oo#.....','....#oooo#....',
+'....#oooo#....','...#oooooo#...','...#oxxxxo#...','...#oooooo#...',
+'..#oooooooo#..','.#oooooooooo#.','.#oooooooooo#.','.############.'],
+q:[ // regina: corona a punte
+'.#..#.##.#..#.','.#.#o#oo#o#.#.','.#o#oooooo#o#.','.#oooooooooo#.',
+'..#oxooooxo#..','..#oooooooo#..','...#oooooo#...','...#oooooo#...',
+'....#oooo#....','....#oooo#....','....#oooo#....','...#oooooo#...',
+'...#oooooo#...','..#oooooooo#..','..#oxxxxxxo#..','..#oooooooo#..',
+'.#oooooooooo#.','.#oooooooooo#.','##ooooooooo##.','##############'],
+k:[ // re: croce + corona
+'......##......','.....#oo#.....','...###oo###...','...#oooooo#...',
+'...###oo###...','.....#oo#.....','.##.######.##.','.#o##oooo##o#.',
+'.#oooooooooo#.','..#oxooooxo#..','..#oooooooo#..','...#oooooo#...',
+'....#oooo#....','....#oooo#....','...#oooooo#...','..#oooooooo#..',
+'..#oxxxxxxo#..','.#oooooooooo#.','##oooooooooo##','##############'],
 };
 
 /* =========================================================
@@ -741,28 +523,31 @@ function drawTargetMark(i){
       if(((dx + dy) & 1) === 0) px(xm + dx, ym + dy, col);
 }
 
-/* drawPiece(i): sprite scalato 1.5x ancorato al bordo basso della
-   casella (re ~69px come nel Battle Chess originale).
+/* drawPiece(i): sprite a 2x ancorato al bordo basso della casella.
    bianco: 'o'→bianco '#'→nero · nero: 'o'→nero '#'→bianco */
-const PSCALE = 1.5;
 function drawPiece(i){
   const p = board[i];
   const spr = SPR[p.toLowerCase()];
   const white = colorOf(p) === 'w';
   const [r, c] = RC(i);
-  const sw = spr[0].length, sh = spr.length;       // dimensioni sprite
-  const dw = Math.round(sw * PSCALE), dh = Math.round(sh * PSCALE);
   const yB = YB[r+1] - 2;                          // piedi
   const xm = (xAt(c, yB) + xAt(c+1, yB)) >> 1;     // centro casella in basso
-  const x0 = xm - (dw >> 1), y0 = yB - dh;
-  for(let dy = 0; dy < dh; dy++){
-    const row = spr[Math.min(sh - 1, Math.floor(dy / PSCALE))];
-    for(let dx = 0; dx < dw; dx++){
-      const ch = row[Math.min(sw - 1, Math.floor(dx / PSCALE))] || '.';
+  const x0 = xm - 14, y0 = yB - 40;
+  for(let sr = 0; sr < 20; sr++){
+    const row = spr[sr];
+    for(let sc = 0; sc < 14; sc++){
+      const ch = row[sc];
       if(ch === '.') continue;
-      const X = x0 + dx, Y = y0 + dy;
-      if(ch === 'x'){ px(X, Y, ((X + Y) & 1) ? '#fff' : '#000'); continue; }
-      px(X, Y, ch === '#' ? (white ? '#000' : '#fff') : (white ? '#fff' : '#000'));
+      const X = x0 + sc * 2, Y = y0 + sr * 2;
+      if(ch === 'x'){
+        // blocco 2x2 ditherato fine
+        px(X, Y, '#000'); px(X+1, Y, '#fff');
+        px(X, Y+1, '#fff'); px(X+1, Y+1, '#000');
+        continue;
+      }
+      const ink = ch === '#' ? (white ? '#000' : '#fff') : (white ? '#fff' : '#000');
+      ctx.fillStyle = ink;
+      ctx.fillRect(X, Y, 2, 2);
     }
   }
 }
