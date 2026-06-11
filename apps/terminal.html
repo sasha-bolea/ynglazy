@@ -355,19 +355,24 @@ kbd.addEventListener('pointerdown', (e) => {
 /* il tap sulla tastiera non deve far comparire quella nativa mobile */
 kbd.addEventListener('pointerup', (e) => e.stopPropagation());
 
-/* toggle ⌨: mostra/nasconde la tastiera virtuale */
+/* setKbd(visible): mostra/nasconde la tastiera e aggiorna il toggle.
+   Aperta → X per chiudere · chiusa → ⌨ per riaprire */
+function setKbd(visible){
+  kbd.classList.toggle('hidden', !visible);
+  kbdToggle.classList.toggle('on', visible);
+  kbdToggle.textContent = visible ? 'X' : '⌨';
+}
+setKbd(true);
+
+/* toggle: mostra/nasconde la tastiera virtuale */
 kbdToggle.addEventListener('pointerup', (e) => {
   e.stopPropagation();
-  kbd.classList.toggle('hidden');
-  kbdToggle.classList.toggle('on', !kbd.classList.contains('hidden'));
+  setKbd(kbd.classList.contains('hidden'));
 });
 
 /* su touch, tap sull'input con tastiera virtuale chiusa → riaprila */
 cmd.addEventListener('pointerup', () => {
-  if(TOUCH && kbd.classList.contains('hidden')){
-    kbd.classList.remove('hidden');
-    kbdToggle.classList.add('on');
-  }
+  if(TOUCH && kbd.classList.contains('hidden')) setKbd(true);
 });
 
 /* tap/click ovunque → focus sull'input (apre la tastiera su mobile) */
