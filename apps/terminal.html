@@ -420,7 +420,7 @@ function runCorrupt(){
      con lui), derivano a onda e svaniscono allargandosi */
   const smoke = [];
   function drawSmoke(rot){
-    const off = -44 * .38;                       // punta in coordinate immagine
+    const off = 44 * .38;                        // punta accesa: angolo in basso a destra
     const tx = W / 2 + off * Math.cos(rot) - off * Math.sin(rot);
     const ty = H / 2 + off * Math.sin(rot) + off * Math.cos(rot);
     for(let n = 0; n < 2; n++)
