@@ -136,11 +136,11 @@ const FILES = {
 };
 
 /* --- cestino: file eliminati, ripristinabili con restore.
-       null = il file rifiuta di tornare --- */
+       { corrupt:true } = avviarlo scatena il glitch --- */
 const TRASH = {
   'ventilatore.wav':             '[stream audio non montato — 6h00m00s]',
   'demo_v9_DEFINITIVO_vero.wav': '[demo n.9. definitiva. vera. corrotta.]',
-  '[CORROTTO].prj':              null,
+  '[CORROTTO].prj':              { corrupt: true },
 };
 
 /* --- tracce reali → file .wav (sorgente viva: data/discography.json) --- */
@@ -208,6 +208,93 @@ function playSecretDrone(){
   });
 }
 
+/* =========================================================
+   [CORROTTO].PRJ — glitch psichedelico fullscreen (~33s).
+   Canvas low-res scalato a tutto schermo: plasma HSV, statica,
+   corruzione a blocchi, tearing di righe. Le fasi alternano
+   resa pixelata e liscia. Testo glitch in mix-blend difference.
+   ========================================================= */
+let corruptRunning = false;
+function runCorrupt(){
+  if(corruptRunning) return;
+  corruptRunning = true;
+  const W = 96, H = 60, DUR = 33000;
+
+  const ov = document.createElement('canvas');
+  ov.width = W; ov.height = H;
+  ov.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;z-index:99;background:#000;image-rendering:pixelated';
+  document.body.appendChild(ov);
+  const g = ov.getContext('2d');
+  const img = g.createImageData(W, H);
+  const d = img.data;
+
+  // scritta sovrapposta, glitcha ogni ~700ms
+  const label = document.createElement('div');
+  label.style.cssText = "position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;" +
+    "font-family:'VT323',monospace;font-size:36px;color:#fff;mix-blend-mode:difference;text-align:center;pointer-events:none";
+  document.body.appendChild(label);
+  const MSGS = ['[CORROTTO].PRJ', 'NON SPEGNERE', 'IL PROGETTO NON ESISTE',
+    '0x4C5A5959', 'CHI HA SALVATO QUESTO FILE?', '▓▓▒▒░░▒▒▓▓', 'wtf', ''];
+  const labelTimer = setInterval(() => {
+    label.textContent = MSGS[Math.random() * MSGS.length | 0];
+    label.style.transform = `skew(${(Math.random()*30-15)|0}deg) scale(${(0.7+Math.random()*1.4).toFixed(2)})`;
+  }, 700);
+
+  // hsv→rgb a piena saturazione (h in gradi)
+  function ch(h, n){
+    const k = (n + h / 60) % 6;
+    return 255 * (1 - Math.max(0, Math.min(k, 4 - k, 1))) | 0;
+  }
+
+  const t0 = performance.now();
+  function frame(now){
+    const t = (now - t0) / 1000;
+    if(now - t0 >= DUR) return end();
+    const phase = Math.floor(t / 2.4) % 5;
+    // fasi pari pixelate, dispari lisce
+    ov.style.imageRendering = phase % 2 === 0 ? 'pixelated' : 'auto';
+
+    // plasma psichedelico + statica crescente con la fase
+    const noise = phase === 1 || phase === 4 ? 0.5 : 0.08;
+    for(let i = 0, y = 0; y < H; y++){
+      for(let x = 0; x < W; x++, i += 4){
+        let v = Math.sin(x * .19 + t * 2.1) + Math.sin(y * .23 - t * 1.7) +
+                Math.sin((x + y) * .11 + t * 2.9) +
+                Math.sin(Math.hypot(x - W / 2, y - H / 2) * .3 - t * 3.4);
+        if(Math.random() < noise) v = Math.random() * 8 - 4;   // statica
+        const h = ((v * 45 + t * 130) % 360 + 360) % 360;
+        d[i] = ch(h, 5); d[i+1] = ch(h, 3); d[i+2] = ch(h, 1); d[i+3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+
+    // corruzione a blocchi: rettangoli copiati altrove
+    for(let n = 0; n < 6; n++){
+      const bw = 8 + Math.random() * 30 | 0, bh = 3 + Math.random() * 12 | 0;
+      g.drawImage(ov, Math.random()*(W-bw)|0, Math.random()*(H-bh)|0, bw, bh,
+                      Math.random()*(W-bw)|0, Math.random()*(H-bh)|0, bw, bh);
+    }
+    // tearing: righe shiftate in orizzontale
+    if(phase >= 2){
+      for(let n = 0; n < 8; n++){
+        const y = Math.random() * H | 0;
+        g.drawImage(ov, 0, y, W, 1, Math.sin(t * 9 + y) * 14 | 0, y, W, 1);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function end(){
+    clearInterval(labelTimer);
+    ov.remove(); label.remove();
+    corruptRunning = false;
+    print('&nbsp;');
+    print('[CORROTTO].prj — esecuzione terminata. 33.0s', 'am');
+    print('non chiedere cosa hai appena visto.', 'dim');
+  }
+  requestAnimationFrame(frame);
+}
+
 /* --- EE rm -rf: pioggia di errori finti, poi rientro --- */
 function fakeMeltdown(){
   let n = 0;
@@ -248,6 +335,13 @@ const COMMANDS = {
     if(!key) return print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
     const v = FILES[key];
     if(typeof v === 'string') return print(esc(v));
+    // [CORROTTO].prj ripristinato: si avvia da solo
+    if(v.corrupt){
+      print('questo non è un file di testo.', 'err');
+      setTimeout(() => print('SI STA AVVIANDO.', 'err'), 700);
+      setTimeout(runCorrupt, 1600);
+      return;
+    }
     // traccia reale: metadata fake + apertura spotify
     print(esc(v.meta));
     print(`▶ apertura spotify… <a href="${v.url}" target="_blank" rel="noopener">link manuale</a>`);
@@ -277,12 +371,12 @@ const COMMANDS = {
     const norm = (s) => s.toLowerCase().replace(/[^a-z0-9.]/g, '');
     const key = Object.keys(TRASH).find((k) => norm(k) === norm(f));
     if(!key) return print(`restore: ${esc(f)}: non è nel cestino`, 'err');
-    if(TRASH[key] === null){
-      print(`restore: ${esc(key)}: il file rifiuta di tornare`, 'err');
-      return print('(alcune cose vogliono restare eliminate)', 'dim');
-    }
     FILES[key] = TRASH[key];
     delete TRASH[key];
+    if(FILES[key] && FILES[key].corrupt){
+      print(`…qualcosa si è opposto. ${esc(key)} ripristinato comunque.`, 'err');
+      return print('non avresti dovuto.', 'dim');
+    }
     print(`${esc(key)} ripristinato.`, 'am');
   },
   clear(){ out.innerHTML = ''; },
