@@ -378,11 +378,11 @@ r:[ // torre: fortificazione merlata
 '.#oooooooooo#.','.#oxoxoxoxox#.','.#oooooooooo#.','.#oooooooooo#.',
 '.#oooooooooo#.','.#oooooooooo#.','.#oooooooooo#.','#oooooooooooo#',
 '#oxxxxxxxxxxo#','#oooooooooooo#','##############','##############'],
-n:[ // cavallo: testa equina
-'.....####.....','....#oooo#....','...#o#ooooo#..','..#ooooooooo#.',
-'..#oo#oooooo#.','.#ooooooooooo#','.#oooo##ooooo#','..##ooo#oooo#.',
-'....#ooo#ooo#.','...#oooo#oo#..','...#ooooo##...','..#ooooooo#...',
-'..#oooooooo#..','..#oooooooo#..','.#oooooooooo#.','.#oooooooooo#.',
+n:[ // cavallo: testa equina di profilo (sx) — orecchie, occhio, bocca, criniera
+'....##.##.....','...#oo#oo#....','..#ooooooo#...','.#oooooooox#..',
+'#oo#oooooooo#.','#oooooooooox#.','#oo##ooooooo#.','.##..#ooooxo#.',
+'......#ooooo#.','.....#ooooox#.','....#ooooooo#.','...#ooooooxo#.',
+'..#ooooooooo#.','..#ooooooooo#.','.#oooooooooo#.','.#oooooooooo#.',
 '.#oxxxxxxxxo#.','.#oooooooooo#.','#oooooooooooo#','##############'],
 b:[ // alfiere: mitra
 '......##......','.....#oo#.....','....#oooo#....','...#oo##oo#...',
@@ -500,27 +500,33 @@ function drawFrame(){
   }
 }
 
-/* drawTargetMark(i): bordo tratteggiato + puntino sulla destinazione */
+/* drawTargetMark(i): bordo tratteggiato + puntino sulla destinazione.
+   Ogni tratto è nero su tassello bianco 3x3: resta leggibile anche
+   sul dithering 50% delle caselle scure. */
 function drawTargetMark(i){
   const [r, c] = RC(i);
-  const dark = ((r + c) & 1) === 1;
-  const col = dark ? '#fff' : '#000';
-  for(let y = YB[r]; y < YB[r+1]; y++){
-    if((y & 1) === 0){                       // lati tratteggiati
-      px(xAt(c, y) + 1, y, col);
-      px(xAt(c+1, y) - 1, y, col);
-    }
+  // dash(x,y): pixel nero con alone bianco attorno
+  function dash(x, y){
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x - 1, y - 1, 3, 3);
+    px(x, y, '#000');
   }
-  for(let x = xAt(c, YB[r]) + 1; x < xAt(c+1, YB[r]); x += 2)
-    px(x, YB[r] + 1, col);                   // bordo alto tratteggiato
-  for(let x = xAt(c, YB[r+1]) + 1; x < xAt(c+1, YB[r+1]); x += 2)
-    px(x, YB[r+1] - 1, col);                 // bordo basso tratteggiato
-  // puntino centrale ditherato
+  for(let y = YB[r] + 2; y < YB[r+1] - 1; y += 2){   // lati tratteggiati
+    dash(xAt(c, y) + 2, y);
+    dash(xAt(c+1, y) - 2, y);
+  }
+  for(let x = xAt(c, YB[r]) + 2; x < xAt(c+1, YB[r]) - 1; x += 2)
+    dash(x, YB[r] + 2);                              // bordo alto tratteggiato
+  for(let x = xAt(c, YB[r+1]) + 2; x < xAt(c+1, YB[r+1]) - 1; x += 2)
+    dash(x, YB[r+1] - 2);                            // bordo basso tratteggiato
+  // puntino centrale: dither nero su tassello bianco
   const ym = (YB[r] + YB[r+1]) >> 1;
   const xm = (xAt(c, ym) + xAt(c+1, ym)) >> 1;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(xm - 3, ym - 2, 7, 5);
   for(let dy = -1; dy <= 1; dy++)
     for(let dx = -2; dx <= 2; dx++)
-      if(((dx + dy) & 1) === 0) px(xm + dx, ym + dy, col);
+      if(((dx + dy) & 1) === 0) px(xm + dx, ym + dy, '#000');
 }
 
 /* drawPiece(i): sprite a 2x ancorato al bordo basso della casella.
