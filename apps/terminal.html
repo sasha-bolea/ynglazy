@@ -217,16 +217,17 @@ function playSecretDrone(){
 /* =========================================================
    [CORROTTO].PRJ — glitch psichedelico fullscreen (~33s).
    Chiede al desktop (postMessage) di portare la finestra a
-   schermo intero. Canvas low-res scalato: 6 modalità che si
-   alternano ogni 3.3s — plasma, statica, tunnel, melt, barre,
-   zigzag — con resa pixelata/liscia alternata, corruzione a
-   blocchi e tearing. Testo glitch in mix-blend difference.
+   schermo intero. Canvas low-res scalato: 12 modalità che si
+   alternano ogni 2.75s — plasma, statica, tunnel, melt, barre,
+   pioggia, caleidoscopio, rgb-split, zigzag, feedback, moiré,
+   scacchiera — con resa pixelata/liscia alternata, corruzione
+   a blocchi e tearing. Testo glitch in mix-blend difference.
    ========================================================= */
 let corruptRunning = false;
 function runCorrupt(){
   if(corruptRunning) return;
   corruptRunning = true;
-  const W = 96, H = 60, DUR = 33000, MODE_MS = 3300;
+  const W = 96, H = 60, DUR = 33000, MODE_MS = 2750;
 
   // chiedi al desktop di allargare la finestra a tutto schermo
   try{ parent.postMessage({ type: 'lzyyy-glitch', on: true }, '*'); }catch(err){}
@@ -322,7 +323,76 @@ function runCorrupt(){
     }
     g.putImageData(img, 0, 0);
   }
-  const MODES = [mPlasma, mStatic, mTunnel, mMelt, mBars, mZigzag];
+  // pioggia: colonne fosforo che cadono su scia (stato persistente)
+  const drops = Array.from({ length: 24 }, () =>
+    ({ x: Math.random() * W, y: Math.random() * H, v: .5 + Math.random() }));
+  function mRain(){
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 0, W, H);
+    drops.forEach((p) => {
+      g.fillStyle = '#d4f5a0'; g.fillRect(p.x | 0, p.y | 0, 1, 2);
+      g.fillStyle = '#4a7a2a'; g.fillRect(p.x | 0, (p.y - 3) | 0, 1, 3);
+      p.y += p.v * 2;
+      if(p.y > H + 4){ p.y = -4; p.x = Math.random() * W; }
+    });
+  }
+  // caleidoscopio: plasma specchiato sui due assi
+  function mKaleido(t){
+    for(let i = 0, y = 0; y < H; y++) for(let x = 0; x < W; x++, i += 4){
+      const mx = Math.min(x, W - 1 - x), my = Math.min(y, H - 1 - y);
+      const v = Math.sin(mx * .3 + t * 3) + Math.sin(my * .35 - t * 2.2) +
+                Math.sin((mx + my) * .2 + t * 4);
+      put(i, v * 60 + t * 150, 1);
+    }
+    g.putImageData(img, 0, 0);
+  }
+  // rgb-split: canali del frame precedente shiftati + righe di disturbo
+  function mRGBSplit(t){
+    const prev = g.getImageData(0, 0, W, H).data;
+    const sh = ((2 + Math.sin(t * 6) * 3) | 0) * 4;
+    const L = prev.length;
+    for(let i = 0; i < L; i += 4){
+      d[i]   = prev[(i + sh) % L];
+      d[i+1] = prev[i + 1];
+      d[i+2] = prev[((i - sh) % L + L) % L + 2];
+      d[i+3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    // splash di colore per non far morire il feedback
+    g.fillStyle = `hsl(${(t * 240) % 360},100%,55%)`;
+    g.fillRect(Math.random() * (W - 20) | 0, Math.random() * (H - 6) | 0, 20, 6);
+  }
+  // feedback: il frame rientra in se stesso zoomato e ruotato
+  function mWarp(t){
+    g.save();
+    g.translate(W / 2, H / 2);
+    g.rotate(.05 + .06 * Math.sin(t * 1.5));
+    g.scale(1.08, 1.08);
+    g.drawImage(ov, -W / 2, -H / 2);
+    g.restore();
+    // seme di colore in orbita al centro
+    const a = t * 5;
+    g.fillStyle = `hsl(${(t * 300) % 360},100%,55%)`;
+    g.fillRect(W / 2 + Math.cos(a) * 10 | 0, H / 2 + Math.sin(a) * 8 | 0, 3, 3);
+  }
+  // moiré: interferenza di onde quadratiche ad alta frequenza
+  function mMoire(t){
+    for(let i = 0, y = 0; y < H; y++) for(let x = 0; x < W; x++, i += 4){
+      const v = Math.sin(x * x * .015 + t * 4) * Math.sin(y * y * .02 - t * 3);
+      put(i, v * 120 + t * 100, Math.abs(v));
+    }
+    g.putImageData(img, 0, 0);
+  }
+  // scacchiera: celle pulsanti a tinte complementari
+  function mCheckers(t){
+    const s = 6 + (Math.sin(t * 2) * 4 | 0);
+    for(let i = 0, y = 0; y < H; y++) for(let x = 0; x < W; x++, i += 4){
+      const k = ((x / s | 0) + (y / s | 0)) & 1;
+      put(i, t * 200 + (k ? 180 : 0), k ? 1 : .8);
+    }
+    g.putImageData(img, 0, 0);
+  }
+  const MODES = [mPlasma, mStatic, mTunnel, mMelt, mBars, mRain,
+                 mKaleido, mRGBSplit, mZigzag, mWarp, mMoire, mCheckers];
 
   const t0 = performance.now();
   function frame(now){
