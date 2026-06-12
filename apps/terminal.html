@@ -65,6 +65,9 @@ body::after{
   text-shadow:var(--glow-ph);
 }
 #out .dim{ color:var(--grey-m); text-shadow:none; }
+/* output "raw": niente wrapping, ogni carattere nella sua colonna
+   (griglia da terminale vero); righe lunghe → scroll orizzontale */
+#out .pre{ white-space:pre; word-break:normal; overflow-x:auto; }
 #out .am{ color:var(--am); text-shadow:var(--glow-am); }
 #out .err{ color:#ff6b5e; text-shadow:0 0 4px rgba(255,107,94,.5); }
 #out a{ color:var(--am); text-shadow:var(--glow-am); }
@@ -619,7 +622,7 @@ const COMMANDS = {
     const key = Object.keys(FILES).find((k) => normName(k) === normName(f));
     if(!key) return print(`cat: ${esc(f)}: file inesistente (o nascosto)`, 'err');
     const v = FILES[key];
-    if(typeof v === 'string') return print(esc(v));
+    if(typeof v === 'string') return print(esc(v), 'pre');
     // [CORROTTO].prj ripristinato: si avvia da solo
     if(v.corrupt){
       print('questo non è un file di testo.', 'err');
