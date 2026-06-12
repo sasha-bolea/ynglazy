@@ -447,9 +447,9 @@ function runCorrupt(){
      con lui), derivano a onda e svaniscono allargandosi */
   const smoke = [];
   function drawSmoke(rot){
-    const off = 20;                              // brace: estremità sinistra dell'immagine
-    const tx = W / 2 - off * Math.cos(rot);
-    const ty = H / 2 - off * Math.sin(rot);
+    const off = 44 * .38;                        // brace: angolo in basso a destra
+    const tx = W / 2 + off * Math.cos(rot) - off * Math.sin(rot);
+    const ty = H / 2 + off * Math.sin(rot) + off * Math.cos(rot);
     for(let n = 0; n < 4; n++)
       smoke.push({ x: tx + (Math.random() * 3 - 1.5), y: ty, life: 1, ph: Math.random() * 6.28 });
     for(let i = smoke.length - 1; i >= 0; i--){
@@ -510,7 +510,7 @@ function runCorrupt(){
     ov.style.imageRendering = (imgsOn && clean) || slot % 2 === 0 ? 'pixelated' : 'auto';
     MODES[slot % MODES.length](t);
     function drawImgs(){
-      drawImgGlitched(joint, W / 2, H / 2, 56, t * 1.4, clean);
+      drawImgGlitched(joint, W / 2, H / 2, 44, t * 1.4, clean);
       drawSmoke(t * 1.4);
       const lr = t * 2.6;
       drawImgGlitched(leaf, 10,     8,     18,  lr, clean);

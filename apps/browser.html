@@ -421,15 +421,15 @@ function startDino(container){
   }
 
   /* drawDino(): joint verticale, punta accesa in alto.
-     L'immagine è orizzontale (630x360, brace a sinistra):
-     +90° la mette in piedi con la brace in cima */
+     L'immagine è diagonale (brace in basso a destra):
+     -135° la mette in piedi con la brace in cima */
   function drawDino(){
     const x = dinoX, y = dinoY;
     if(jointImg.complete && jointImg.naturalWidth){
       ctx.save();
       ctx.translate(x + dinoW / 2, y + dinoH / 2);
-      ctx.rotate(Math.PI / 2);
-      ctx.drawImage(jointImg, -24, -14, 48, 28);   // proporzioni native ~16:9
+      ctx.rotate(-3 * Math.PI / 4);
+      ctx.drawImage(jointImg, -20, -20, 40, 40);
       ctx.restore();
       return;
     }
