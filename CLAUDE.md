@@ -120,7 +120,7 @@ ynglazy/
 | SYNTH-7 | apps/synth.html | ✅ FATTO | Pannello scheuomorfico, oscilloscopio, manopole, mobile-ready |
 | File Manager | apps/file-manager.html | ✅ FATTO | Canzoni come file .wav → link Spotify, dati da data/discography.json |
 | Tetris | apps/tetris.html | ✅ FATTO | Touch: pulsanti + gesti swipe. EE-07 incluso |
-| Browser | apps/browser.html | ✅ FATTO | Presave orcd.co + scheda OFFLINE con gioco dino |
+| Browser | apps/browser.html | ✅ FATTO | Pagina ultima uscita da discography.json (solo link, zero embed) + scheda OFFLINE con gioco dino |
 | Terminale | apps/terminal.html | ✅ FATTO | Comandi fake; EE-05 `secret` → drone audio nascosto |
 | Chess | apps/chess.html | ✅ FATTO | Mac System 6/7 1-bit, iso pixel-art, motore reale (perft-verificato), CPU 3 livelli |
 | Paint | apps/paint.html | ✅ FATTO | PAINT.EXE: canvas 512×320 pixelato, 7 strumenti, flood fill, undo, save PNG, touch-ready |
@@ -181,7 +181,7 @@ ynglazy/
 - **Web Audio API** — per il synth e i suoni UI
 - **CSS animations** — per tutti gli effetti glitch
 - **Canvas API** — per visualizer e Tetris
-- **Spotify Embed** — per la musica nel file manager / Tetris
+- **Solo link verso le piattaforme** (Spotify, song.link…) — zero embed di terze parti, per scelta privacy
 - **Deploy:** GitHub Pages o Vercel (statico, zero backend)
 
 ---

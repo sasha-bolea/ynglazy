@@ -92,16 +92,8 @@ body{
 }
 .bw-url .lock{ color:var(--am); margin-right:6px; }
 
-/* Area pagina (ospita l'iframe del presave reale) */
-.bw-page{ flex:1; min-height:0; display:flex; flex-direction:column; position:relative; }
-.bw-fallback{
-  flex-shrink:0; padding:4px 10px;
-  background:#0f0e0c; border-bottom:1px solid var(--grey-m);
-  font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--grey-m);
-}
-.bw-fallback a{ color:var(--am); text-shadow:var(--glow-am); text-decoration:none; }
-.bw-fallback a:hover{ text-decoration:underline; }
-.bw-embed{ flex:1; width:100%; border:0; background:#fff; }
+/* Area pagina */
+.bw-page{ flex:1; min-height:0; display:flex; flex-direction:column; position:relative; overflow-y:auto; }
 
 /* ---- Gioco dino (scheda OFFLINE) ---- */
 .dino-wrap{
@@ -129,7 +121,7 @@ body{
 }
 .dino-bar .hi{ color:var(--am); text-shadow:var(--glow-am); }
 
-/* ---- Landing PRE-SAVE ---- */
+/* ---- Pagina ULTIMA USCITA ---- */
 .ps{
   min-height:100%; padding:42px 28px;
   display:flex; flex-direction:column; align-items:center;
@@ -211,30 +203,35 @@ body{
 
 <script>
 /* =========================================================
-   BROWSER — config PRE-SAVE
+   BROWSER — pagina ULTIMA USCITA
+   Nessun embed di terze parti: solo link, i trattamenti esterni
+   partono soltanto al click dell'utente.
    ========================================================= */
 
-/* >>> INCOLLA QUI il link presave reale (smart-link unico).
-   Se vuoti, mostra i pulsanti disabilitati con avviso. <<< */
-/* Smart-link presave feature.fm (orcd.co). I deep-link per piattaforma
-   sono gestiti server-side: ogni pulsante apre la stessa pagina presave. */
-const SMART = 'https://orcd.co/solelazy';
-
-const PRESAVE = {
-  release: 'sole',                     // titolo del progetto
-  date:    'COMING SOON',              // data o "COMING SOON"
-  cover:   '☀',                        // copertina placeholder (sole)
-  url:     SMART,
-  // Pulsanti per piattaforma → tutti allo smart-link (presave feature.fm)
-  links: [
-    { label:'PRE-SAVE · SPOTIFY',      url:SMART },
-    { label:'PRE-ADD · APPLE MUSIC',   url:SMART },
-    { label:'PRE-SAVE · DEEZER',       url:SMART },
-    { label:'PRE-SAVE · AMAZON MUSIC', url:SMART },
-    { label:'PRE-SAVE · SOUNDCLOUD',   url:SMART },
-    { label:'PRE-SAVE · TIDAL',        url:SMART },
-  ],
+/* snapshot di fallback; la sorgente viva è data/discography.json */
+let RELEASE = {
+  name: 'sole', type: 'single', date: '2026-06-12',
+  url: 'https://open.spotify.com/album/2M1dFTWP9OxnpGAZxMVXzj',
 };
+fetch('../data/discography.json')
+  .then((r) => r.json())
+  .then((d) => {
+    const latest = [...d.projects].sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+    if(latest && latest.url){ RELEASE = latest; renderTabs(); renderActive(); }
+  })
+  .catch(() => {});
+
+/* releaseLinks(): spotify diretto + song.link (risolve tutte le
+   piattaforme dall'url spotify) + ricerche dirette */
+function releaseLinks(){
+  const q = encodeURIComponent('lazyyy ' + RELEASE.name);
+  return [
+    { label:'SPOTIFY',              url: RELEASE.url, main:true },
+    { label:'TUTTE LE PIATTAFORME', url: 'https://song.link/' + encodeURIComponent(RELEASE.url), main:true },
+    { label:'APPLE MUSIC',          url: 'https://music.apple.com/search?term=' + q },
+    { label:'YOUTUBE',              url: 'https://www.youtube.com/results?search_query=' + q },
+  ];
+}
 
 const pageEl = document.getElementById('bw-page');
 const tabsEl = document.getElementById('bw-tabs');
@@ -248,10 +245,10 @@ function esc(s){
 
 /* =========================================================
    Sistema schede
-   - scheda presave (orcd embed)
+   - scheda ULTIMA USCITA (pagina interna, solo link)
    - nuova scheda "+" → scheda OFFLINE col gioco del dino
    ========================================================= */
-let tabs = [{ id:1, kind:'presave', title:'PRE-SAVE — lazyyy' }];
+let tabs = [{ id:1, kind:'release', title:'lazyyy — OUT NOW' }];
 let activeId = 1;
 let nextId = 2;
 let dino = null;   // istanza gioco attiva (per fermarla)
@@ -286,9 +283,9 @@ function renderActive(){
   stopDino();
   const t = tabs.find(x => x.id === activeId);
   if(!t){ pageEl.innerHTML = ''; urlEl.textContent = 'browser://vuoto'; return; }
-  if(t.kind === 'presave'){
-    urlEl.textContent = PRESAVE.url.replace(/^https?:\/\//, '');
-    renderEmbed();
+  if(t.kind === 'release'){
+    urlEl.textContent = 'lzyyy.sys/ultima-uscita';
+    renderRelease();
   } else {
     urlEl.textContent = 'browser://offline';
     dino = startDino(pageEl);
@@ -314,16 +311,23 @@ function closeTab(id){
   renderTabs(); renderActive();
 }
 
-/* renderEmbed(): pagina presave reale (orcd) nella scheda */
-function renderEmbed(){
+/* renderRelease(): pagina interna con l'ultima uscita e i link
+   alle piattaforme (solo <a>, niente iframe) */
+function renderRelease(){
+  const glyph = RELEASE.name.toLowerCase().includes('sole') ? '☀' : '♪';
+  const links = releaseLinks().map((l) =>
+    `<a class="cta${l.main ? '' : ' ghost'}" href="${esc(l.url)}" target="_blank" rel="noopener">` +
+      `<span>${esc(l.label)}</span><span>⇗</span></a>`).join('');
   pageEl.innerHTML =
-    `<div class="bw-fallback">` +
-      `presave reale di lazyyy · pagina non visibile? ` +
-      `<a href="${esc(PRESAVE.url)}" target="_blank" rel="noopener">apri in scheda esterna ⇗</a>` +
-    `</div>` +
-    `<iframe class="bw-embed" src="${esc(PRESAVE.url)}" ` +
-      `title="PRE-SAVE ${esc(PRESAVE.release)}" ` +
-      `allow="clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    `<div class="ps">` +
+      `<div class="kick">OUT NOW</div>` +
+      `<h1>${esc(RELEASE.name)}</h1>` +
+      `<div class="meta">lazyyy · ${esc(RELEASE.type)} · ${esc(RELEASE.date)}</div>` +
+      `<div class="cover">${glyph}</div>` +
+      `<div class="links">${links}</div>` +
+      `<div class="note">nessun contenuto esterno incorporato — ` +
+      `i link aprono le piattaforme in una scheda nuova.</div>` +
+    `</div>`;
 }
 
 document.getElementById('bw-reload').onclick = () => renderActive();

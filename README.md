@@ -11,7 +11,7 @@ Sito web per il producer **[lazyyy](https://open.spotify.com/artist/2YYiyxIraQIG
 | **SYNTH-7** | Synth skeuomorfico con oscilloscopio e manopole (Web Audio API) |
 | **File Manager** | La discografia come file `.wav` con metadata fake → link Spotify |
 | **Tetris** | Giocabile, con supporto touch e messaggi segreti |
-| **Browser** | Presave + scheda OFFLINE: runner con canna che salta le foglie |
+| **Browser** | Pagina ultima uscita (link a tutte le piattaforme) + scheda OFFLINE: runner con canna che salta le foglie |
 | **Terminale** | Comandi fake, tastiera virtuale su mobile, e qualche comando *non* documentato |
 | **Chess** | Scacchi 1-bit stile Mac System 6/7, motore reale, CPU a 3 livelli |
 | **Paint** | PAINT.EXE: canvas pixelato, 7 strumenti, flood fill, salva PNG |

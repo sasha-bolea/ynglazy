@@ -101,10 +101,22 @@
           `qualità di autonomo titolare, trova base giuridica nel legittimo interesse ` +
           `del gestore (art. 6, par. 1, lett. f GDPR) alla resa uniforme dell'interfaccia. ` +
           `Si rinvia all'informativa di Google: policies.google.com/privacy.<br><br>` +
-          `<b>4. Trasferimenti, profilazione, decisioni automatizzate.</b> Non sono ` +
+          `<b>4. Hosting.</b> Il sito è ospitato sull'infrastruttura di Vercel Inc. ` +
+          `(vercel.com). Per la sola erogazione tecnica del servizio e per finalità ` +
+          `di sicurezza, i server dell'hosting registrano nei log di accesso dati ` +
+          `tecnici di connessione, ivi incluso l'indirizzo IP. Tale trattamento è ` +
+          `effettuato da Vercel secondo la propria informativa: ` +
+          `vercel.com/legal/privacy-policy.<br><br>` +
+          `<b>5. Collegamenti esterni.</b> Il sito contiene collegamenti ipertestuali ` +
+          `verso piattaforme di terze parti (tra cui Spotify, song.link, Apple Music, ` +
+          `YouTube, GitHub). Nessuna risorsa di tali piattaforme è incorporata nelle ` +
+          `pagine: il collegamento si attiva esclusivamente su azione volontaria ` +
+          `dell'utente e i successivi trattamenti sono disciplinati dalle informative ` +
+          `dei rispettivi gestori.<br><br>` +
+          `<b>6. Trasferimenti, profilazione, decisioni automatizzate.</b> Non sono ` +
           `effettuati trasferimenti di dati a cura del Titolare, né attività di ` +
           `profilazione o processi decisionali automatizzati ai sensi dell'art. 22 GDPR.<br><br>` +
-          `<b>5. Diritti dell'interessato.</b> L'interessato può esercitare i diritti ` +
+          `<b>7. Diritti dell'interessato.</b> L'interessato può esercitare i diritti ` +
           `di cui agli artt. 15-22 GDPR (accesso, rettifica, cancellazione, limitazione, ` +
           `portabilità, opposizione) rivolgendosi al Titolare, e ha diritto di proporre ` +
           `reclamo al Garante per la protezione dei dati personali (art. 77 GDPR).`,
@@ -118,7 +130,9 @@
           `<b>1. Assenza di cookie.</b> Il presente sito non installa cookie di alcuna ` +
           `natura: né tecnici, né analitici, né di profilazione, né di terze parti. ` +
           `Nessun identificatore è depositato sul dispositivo dell'utente né letto ` +
-          `da esso a fini di tracciamento.<br><br>` +
+          `da esso a fini di tracciamento. Il sito non incorpora contenuti di terze ` +
+          `parti (iframe, embed, pixel) idonei a depositare identificatori; sono ` +
+          `presenti soli collegamenti ipertestuali, attivati dall'utente.<br><br>` +
           `<b>2. Memorizzazione locale (sessionStorage).</b> Il sito si avvale della ` +
           `tecnologia sessionStorage del browser al solo fine di conservare, per la ` +
           `durata della singola sessione di navigazione, lo stato funzionale ` +
