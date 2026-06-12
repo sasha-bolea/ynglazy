@@ -373,21 +373,22 @@ function startDino(container){
   /* fumo dalla punta del joint (ora in alto, sopra lo sprite) */
   function drawSmoke(){
     if(started && !over){
-      smoke.push({
-        x: dinoX + dinoW / 2,
-        y: dinoY + dinoH / 2 - 16,
-        life: 1, ph: Math.random() * 6.28,
-      });
+      for(let n = 0; n < 3; n++)
+        smoke.push({
+          x: dinoX + dinoW / 2 + (Math.random() * 5 - 2.5),
+          y: dinoY + dinoH / 2 - 16,
+          life: 1, ph: Math.random() * 6.28,
+        });
     }
     for(let i = smoke.length - 1; i >= 0; i--){
       const p = smoke[i];
-      p.life -= .02;
+      p.life -= .015;
       if(p.life <= 0){ smoke.splice(i, 1); continue; }
-      p.y -= .7;
+      p.y -= .8;
       p.x -= speed * .35;                       // scia verso sinistra col mondo
-      p.x += Math.sin(p.ph + p.life * 8) * .4;
-      ctx.fillStyle = `rgba(255,255,255,${(p.life * .7).toFixed(2)})`;
-      const sz = p.life > .5 ? 2 : 3;
+      p.x += Math.sin(p.ph + p.life * 8) * .5;
+      ctx.fillStyle = `rgba(255,255,255,${(p.life * .85).toFixed(2)})`;
+      const sz = p.life > .5 ? 3 : 4;
       ctx.fillRect(p.x | 0, p.y | 0, sz, sz);
     }
   }
