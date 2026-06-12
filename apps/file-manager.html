@@ -240,8 +240,10 @@ function buildTree(){
       ...recovered,
     ]},
     { name:'Documenti', kind:'folder', children:[
-      { name:'README.txt',          kind:'file', dim:'1.2 KB', date:'1987-03-14' },
-      { name:'note_su_FFFFFF.txt',  kind:'file', dim:'0.4 KB', date:'2026-03-13' },
+      { name:'README.txt',          kind:'file', dim:'1.2 KB', date:'1987-03-14',
+        content:'lazy ma che caaaaaaaa[…rumore…]aaazzo\n\n(versione integrale nel terminale: cat readme.txt)' },
+      { name:'note_su_FFFFFF.txt',  kind:'file', dim:'0.4 KB', date:'2026-03-13',
+        content:'#FFFFFF è bianco.\ntutto il resto è commento.' },
     ]},
     { name:'Immagini',  kind:'folder', children:[
       { name:'cover_#FFFFFF.png', kind:'img', dim:'#FFFFFF', date:'2026-03-13' },
@@ -328,15 +330,38 @@ function selectRow(el){
   el.classList.add('selected');
 }
 
-/* activate(node): doppio click → azione per tipo */
+/* activate(node): doppio click → cartelle navigano, canzoni aprono
+   spotify, tutto il resto si apre come finestra-viewer dell'OS */
 function activate(node){
   if(node.kind === 'folder' || node.kind === 'project') return go([...path, node.name]);
   if(node.kind === 'song')   return window.open(node.url, '_blank', 'noopener');
-  if(node.kind === 'file')   return flash('README.txt :: lazy ma che caaaaaaaa[…]aaazzo');
-  if(node.kind === 'sample') return flash(`${node.name} :: stream audio non montato`);
-  if(node.kind === 'img')    return flash(`${node.name} :: anteprima non disponibile [render fallito]`);
-  if(node.kind === 'video')  return flash(`${node.name} :: codec sconosciuto — solo glitch.`);
-  if(node.kind === 'corrupt')return flash(`${node.name} :: SETTORE ILLEGGIBILE — il disco urla.`);
+  openFileWin(node);
+}
+
+/* openFileWin(node): chiede al desktop una finestra-viewer per il
+   file (postMessage). Standalone, senza desktop → toast di fallback */
+function openFileWin(node){
+  if(window.parent === window){
+    return flash(`${node.name} :: apribile solo dentro LZYYY_SYS`);
+  }
+  const meta = `<div class="fv-meta">${esc(node.dim || '--')} · ${esc(node.date || '--')}</div>`;
+  let body;
+  if(node.kind === 'file'){
+    body = `<pre class="fv-txt">${esc(node.content || '[file vuoto]')}</pre>`;
+  } else if(node.kind === 'img'){
+    body = node.name.includes('#FFFFFF')
+      ? `<div class="fv-img fv-white"></div><div class="fv-cap">#FFFFFF — è tutto lì.</div>`
+      : `<div class="fv-img fv-noise"></div><div class="fv-cap">anteprima non disponibile [render fallito]</div>`;
+  } else if(node.kind === 'video'){
+    body = `<div class="fv-img fv-noise"></div><div class="fv-cap">codec sconosciuto — solo glitch.</div>`;
+  } else if(node.kind === 'sample'){
+    body = `<div class="fv-wave"></div><div class="fv-cap">stream audio non montato</div>`;
+  } else {  // corrupt
+    body = `<div class="fv-cap fv-err">SETTORE ILLEGGIBILE — il disco urla.</div>`;
+  }
+  try{
+    parent.postMessage({ type:'lzyyy-open-file', title: esc(node.name), html: body + meta }, '*');
+  }catch(err){ flash(node.name); }
 }
 
 /* go(p): naviga al percorso p (validato) */

@@ -223,6 +223,35 @@
   }
 
   /* -----------------------------------------------------------
+     openFileWindow({title, html}): finestra-viewer per un file
+     aperto dal File Manager (title/html arrivano già escapati).
+     ----------------------------------------------------------- */
+  function openFileWindow(d) {
+    const win = document.createElement('div');
+    win.className = 'win';
+    win.style.zIndex = ++winZ;
+    if (!isMobile()) {
+      win.style.width = '340px';
+      win.style.left = (120 + Math.random() * 140) + 'px';
+      win.style.top  = (80 + Math.random() * 90) + 'px';
+    }
+    win.innerHTML =
+      `<div class="win-title">` +
+        `<span>▤ ${d.title}</span>` +
+        `<span class="win-btns">` +
+          `<span class="win-max" title="schermo intero">□</span>` +
+          `<span class="win-close" title="chiudi">×</span>` +
+        `</span>` +
+      `</div>` +
+      `<div class="win-body">${d.html}</div>`;
+    document.getElementById('desktop').appendChild(win);
+    win.addEventListener('mousedown', () => { win.style.zIndex = ++winZ; });
+    win.querySelector('.win-close').addEventListener('click', () => win.remove());
+    setupMaximize(win);
+    if (!isMobile()) makeDraggable(win, win.querySelector('.win-title'));
+  }
+
+  /* -----------------------------------------------------------
      setupMaximize(win): il bottone □ porta la finestra a schermo
      intero; un altro click la riporta a posizione e misura prima.
      ----------------------------------------------------------- */
@@ -376,6 +405,7 @@
     window.addEventListener('message', (e) => {
       if (!e.data) return;
       if (e.data.type === 'lzyyy-crash') return showCrashScreen();
+      if (e.data.type === 'lzyyy-open-file') return openFileWindow(e.data);
       if (e.data.type !== 'lzyyy-glitch') return;
       document.querySelectorAll('.win iframe').forEach((f) => {
         if (f.contentWindow === e.source)
