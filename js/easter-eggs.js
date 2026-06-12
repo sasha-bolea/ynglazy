@@ -229,6 +229,12 @@
     window.removeEventListener('keydown', onEsc);
   }
 
+  // Le policy sono apribili anche dal File Manager (privacy.txt /
+  // cookie.txt in Documenti) via postMessage
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'lzyyy-open-policy') showPolicy(e.data.kind);
+  });
+
   // Parte dopo il boot del desktop
   document.addEventListener('lzyyy:booted', start, { once: true });
 })();

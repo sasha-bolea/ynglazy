@@ -532,10 +532,12 @@
   color: var(--grey-m);
 }
 .av-legal .lnk {
-  color: var(--am);
+  color: var(--grey-d);   /* scuro: l'ambra su offwhite non contrastava */
+  font-weight: 700;
   text-decoration: underline;
   cursor: crosshair;
 }
+.av-legal .lnk:hover { color: #b32d2d; }
 
 /* =========================================================
    Viewer file aperti dal File Manager (finestre lzyyy-open-file)

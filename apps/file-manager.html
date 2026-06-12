@@ -182,7 +182,7 @@ let path = [];      // percorso corrente (array di nomi), [] = radice
 /* Touch: tap singolo apre (niente doppio click su mobile) */
 const COARSE = window.matchMedia('(pointer:coarse)').matches;
 
-const ICON = { folder:'▸', project:'💿', song:'♪', file:'▤', img:'▢', video:'▷', sample:'◈', corrupt:'⚠' };
+const ICON = { folder:'▸', project:'💿', song:'♪', file:'▤', policy:'§', img:'▢', video:'▷', sample:'◈', corrupt:'⚠' };
 
 const treeEl  = document.getElementById('fm-tree');
 const listEl  = document.getElementById('fm-list');
@@ -244,6 +244,8 @@ function buildTree(){
         content:'lazy ma che caaaaaaaa[…rumore…]aaazzo\n\n(versione integrale nel terminale: cat readme.txt)' },
       { name:'note_su_FFFFFF.txt',  kind:'file', dim:'0.4 KB', date:'2026-03-13',
         content:'#FFFFFF è bianco.\ntutto il resto è commento.' },
+      { name:'privacy.txt', kind:'policy', policy:'privacy', dim:'2.1 KB', date:'2026-06-12' },
+      { name:'cookie.txt',  kind:'policy', policy:'cookie',  dim:'1.4 KB', date:'2026-06-12' },
     ]},
     { name:'Immagini',  kind:'folder', children:[
       { name:'cover_#FFFFFF.png', kind:'img', dim:'#FFFFFF', date:'2026-03-13' },
@@ -343,6 +345,11 @@ function activate(node){
 function openFileWin(node){
   if(window.parent === window){
     return flash(`${node.name} :: apribile solo dentro LZYYY_SYS`);
+  }
+  // policy legali: le finestre le possiede il desktop (easter-eggs.js)
+  if(node.kind === 'policy'){
+    parent.postMessage({ type:'lzyyy-open-policy', kind: node.policy }, '*');
+    return;
   }
   const meta = `<div class="fv-meta">${esc(node.dim || '--')} · ${esc(node.date || '--')}</div>`;
   let body;
