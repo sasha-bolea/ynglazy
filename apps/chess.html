@@ -114,7 +114,6 @@ body{
     <span class="mi" data-m="move">Move</span>
     <span class="mi" data-m="settings">Settings</span>
     <span class="mi" data-m="level">Level</span>
-    <span class="mi" data-m="modem">Modem</span>
   </div>
   <canvas id="cv" width="512" height="330"></canvas>
   <div class="mac-status"><span id="st-msg">WHITE TO MOVE</span><span id="st-lvl">LEVEL: NORMAL</span></div>
@@ -754,10 +753,6 @@ function buildMenu(name){
     t: LEVELS[l], check: aiLevel === l,
     fn(){ aiLevel = l; stLvl.textContent = 'LEVEL: ' + LEVELS[l]; },
   }));
-  if(name === 'modem') return [
-    { t:'Dial Opponent…', fn(){ showDialog('MODEM', 'ATDT 0x4C5A5959…\nNO CARRIER.'); } },
-    { t:'Hang Up', fn(){ showDialog('MODEM', 'Non eri connesso.'); } },
-  ];
   return [];
 }
 
