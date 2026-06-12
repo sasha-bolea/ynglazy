@@ -324,12 +324,17 @@ function startDino(container){
   const hiEl = container.querySelector('#dino-hi');
   const PH = '#d4f5a0', AM = '#ffcc44', GREY = '#8a857e';
 
+  // sprite: joint al posto del dino, foglie al posto dei cactus
+  const jointImg = new Image(); jointImg.src = '../img/joint.png';
+  const leafImg  = new Image(); leafImg.src  = '../img/leaf.png';
+
   let W = 0, H = 0, groundY = 0;
   // ridimensiona il canvas alla scheda
   function resize(){
     W = cv.width = cv.clientWidth || 600;
     H = cv.height = cv.clientHeight || 160;
     groundY = H - 24;
+    ctx.imageSmoothingEnabled = false;   // resta pixelato (si resetta col resize)
     if(dinoY === undefined || onGround) dinoY = groundY - dinoH;
   }
   const ro = new ResizeObserver(resize);
@@ -363,9 +368,20 @@ function startDino(container){
     obstacles.push({ x: W + 10, w: 10 + Math.random()*8, h: 18 + Math.random()*26 });
   }
 
-  /* drawDino(): dino pixel-blocky verde fosforo */
+  /* drawDino(): joint che rotola — camminata a 4 frame di
+     rotazione (90° l'uno) legati alla distanza percorsa */
   function drawDino(){
     const x = dinoX, y = dinoY;
+    if(jointImg.complete && jointImg.naturalWidth){
+      const frame = Math.floor(dist / 12) % 4;
+      ctx.save();
+      ctx.translate(x + dinoW / 2, y + dinoH / 2);
+      ctx.rotate(frame * Math.PI / 2);
+      ctx.drawImage(jointImg, -14, -14, 28, 28);
+      ctx.restore();
+      return;
+    }
+    // fallback se l'immagine non è (ancora) carica
     ctx.fillStyle = PH;
     ctx.fillRect(x, y+6, 14, 12);       // corpo
     ctx.fillRect(x+10, y, 12, 10);      // testa
@@ -393,9 +409,14 @@ function startDino(container){
     ctx.fillStyle = PH;
     for(const o of obstacles){
       if(started && !over) o.x -= speed;
-      ctx.fillRect(o.x, groundY - o.h, o.w, o.h);                 // tronco
-      ctx.fillRect(o.x-3, groundY - o.h*0.5, 3, 6);              // braccio sx
-      ctx.fillRect(o.x+o.w, groundY - o.h*0.6, 3, 6);            // braccio dx
+      if(leafImg.complete && leafImg.naturalWidth){
+        // foglia: leggermente più larga della hitbox (più onesta del contrario)
+        ctx.drawImage(leafImg, o.x - 3, groundY - o.h, o.w + 6, o.h);
+      } else {
+        ctx.fillRect(o.x, groundY - o.h, o.w, o.h);              // tronco
+        ctx.fillRect(o.x-3, groundY - o.h*0.5, 3, 6);            // braccio sx
+        ctx.fillRect(o.x+o.w, groundY - o.h*0.6, 3, 6);          // braccio dx
+      }
       if(!over && dinoX < o.x + o.w && dinoX + dinoW > o.x && dinoY + dinoH > groundY - o.h){
         over = true; hi = Math.max(hi, score);
       }
