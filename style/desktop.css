@@ -524,3 +524,15 @@
 @media (max-width: 768px) {
   .win-max { display: none; }
 }
+
+/* Riga legale nel popup antivirus: privacy & cookie policy */
+.av-legal {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--grey-m);
+}
+.av-legal .lnk {
+  color: var(--am);
+  text-decoration: underline;
+  cursor: crosshair;
+}

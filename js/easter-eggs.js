@@ -36,7 +36,7 @@
   'use strict';
 
   const SPOTIFY = 'https://open.spotify.com/artist/2YYiyxIraQIGFYQUImQzk0';
-  const POPUP_DELAY = 20000;   // 20s dall'avvio
+  const POPUP_DELAY = 800;     // appare subito dopo il boot
   const MAX_VIRUS = 26;        // tetto finestre per non bloccare il browser
   const SPAWN_MS = 650;        // ritmo di moltiplicazione
 
@@ -62,6 +62,9 @@
           `<div class="av-btn primary">INSTALLA ORA</div>` +
           `<div class="av-btn ghost">IGNORA</div>` +
         `</div>` +
+        `<div class="av-legal">continuando accetti la ` +
+          `<span class="lnk" data-p="privacy">privacy policy</span> e la ` +
+          `<span class="lnk" data-p="cookie">cookie policy</span></div>` +
       `</div>`;
     document.body.appendChild(p);
 
@@ -70,6 +73,47 @@
     p.querySelector('.x').onclick = () => { dismiss(); triggerVirus(); };
     p.querySelector('.av-btn.ghost').onclick = () => { dismiss(); triggerVirus(); };
     p.querySelector('.av-btn.primary').onclick = () => fakeInstall(p);
+    p.querySelectorAll('.lnk').forEach((l) => {
+      l.onclick = (e) => { e.stopPropagation(); showPolicy(l.dataset.p); };
+    });
+  }
+
+  /* showPolicy(kind): finestra OS con la policy richiesta.
+     Il sito non raccoglie nulla: le policy dicono questo, in tema. */
+  function showPolicy(kind) {
+    const POLICIES = {
+      privacy: {
+        title: 'PRIVACY.TXT',
+        body:
+          `Questo sito non raccoglie dati personali.<br>` +
+          `Niente account, niente form, niente tracker, niente analytics.<br><br>` +
+          `I font arrivano da Google Fonts: quando li scarichi, Google ` +
+          `vede il tuo indirizzo IP (è l'unico).<br><br>` +
+          `Tutto il resto vive e muore nel tuo browser.`,
+      },
+      cookie: {
+        title: 'COOKIE.TXT',
+        body:
+          `Questo sito non usa cookie.<br><br>` +
+          `Usa sessionStorage per ricordare lo stato del cestino: ` +
+          `sparisce quando chiudi la scheda e non viene inviato a nessuno.<br><br>` +
+          `Niente profilazione, niente terze parti.<br>` +
+          `(le "3 minacce rilevate" non sono reali. forse.)`,
+      },
+    };
+    const def = POLICIES[kind];
+    if (!def || document.getElementById('policy-' + kind)) return;
+    const win = document.createElement('div');
+    win.className = 'win';
+    win.id = 'policy-' + kind;
+    win.style.cssText = 'position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);' +
+      'z-index:9000;max-width:360px;width:90%;';
+    win.innerHTML =
+      `<div class="win-title"><span>▤ ${def.title}</span>` +
+      `<span class="win-close" title="chiudi">×</span></div>` +
+      `<div class="win-body">${def.body}</div>`;
+    win.querySelector('.win-close').onclick = () => win.remove();
+    document.body.appendChild(win);
   }
 
   /* fakeInstall(p): scansione finta → sistema pulito, niente virus */
