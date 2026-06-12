@@ -1,0 +1,311 @@
+<!--
+
+
+
+                             :1;
+                             wd8}
+                             MM8L
+                            lpbMOL
+                ,)c)        tCpOcOp}            .1}       .l1}
+                cdhp        qwd>;cmq1          !\MB}      {wBb
+               +waM[       lc00  ,(Uqa}         QaBL      WBBr
+               {pMM;       {c0[    ]CdBa1}       OdB}     8B8
+               CbMh        cCO`.    :jq8BB       <cpM     Q8M . `.
+              ;qhM0       cwMpcw~     .vv>        jcq[`;~~wM8ff(cLwc
+              (baMc   `[cQMMWkp[`            `,![/ZaMbOOUcdMM[[][jv>
+             ~ChabQ [cwppMMkf         `,[))c0cwWW8BB8M(.  cUM;
+            'cObpbk0ppdqCUcr  `;~1cccwCwaMMMkkMWBOvY0O    ]ck/
+         `[1cwhMhMMbpUf ]cbcwdkbpkbbaUvv>,cmw8bv   )Qq    <cqL
+     l[cwbhaMWWWWWMr:    daW8W0vvv      [UOhU>     [Cp     cQM!
+  ;[waMMMMMMMMMMMMMM)    <v(          lccOv>       cwp     !0ah,
+  _qM88MMMaMaMr <aMMML       1L1,    /cQ0>        !whr      j0Mp}
+  :vvvvv>]whab   jkM8ML     ~ckMMc ;/cOr          \WM[       jaM8`
+       )ZaaMM>   :jaM8b      <vabMMcwp[          ;CMM         <v>
+      lMB88k>      <vv>         vb8BMr            _[:
+      <BMMv`                     <M8ML
+                                  ;vv;
+-->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAINT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   PAINT.EXE — app standalone (iframe). Canvas 512x320 a pixel
+   grossi, strumenti retro, palette fosfori dell'OS.
+   ========================================================= */
+:root{
+  --white:#f0ede8; --grey-l:#c8c3bc; --grey-m:#8a857e; --grey-d:#3a3732;
+  --black:#111010; --ph:#d4f5a0; --am:#ffcc44; --panel:#1c1a17;
+  --bg:#0c0c0b;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ph);
+  font-family:'Share Tech Mono',monospace; font-size:12px;
+  cursor:crosshair; overflow:hidden; user-select:none;
+  display:flex; flex-direction:column;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* barra strumenti */
+#bar{
+  flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:4px;
+  padding:6px 8px; background:var(--panel);
+  border-bottom:1px solid rgba(138,133,126,.3);
+}
+#bar .grp{ display:flex; gap:3px; align-items:center; padding-right:8px;
+  border-right:1px solid rgba(138,133,126,.25); margin-right:4px; }
+#bar .grp:last-child{ border-right:0; margin-left:auto; padding-right:0; }
+#bar button{
+  background:#14120f; border:1px solid rgba(138,133,126,.45);
+  color:var(--ph); font-family:inherit; font-size:12px;
+  min-width:26px; padding:4px 6px; cursor:crosshair; touch-action:manipulation;
+}
+#bar button.on{ background:var(--ph); color:var(--black); }
+#bar button:active{ background:var(--am); color:var(--black); }
+.sw{ width:18px; height:18px; border:1px solid rgba(138,133,126,.5); cursor:crosshair; }
+.sw.on{ outline:2px solid var(--am); }
+
+/* area canvas */
+#wrap{
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:8px; min-height:0;
+}
+#cv{
+  image-rendering:pixelated; touch-action:none;
+  max-width:100%; max-height:100%;
+  border:1px solid var(--grey-d); background:var(--bg);
+}
+
+/* status bar */
+#status{
+  flex-shrink:0; display:flex; justify-content:space-between;
+  padding:3px 10px; background:var(--panel); color:var(--grey-m);
+  border-top:1px solid rgba(138,133,126,.3); font-size:11px; letter-spacing:.5px;
+}
+#status .am{ color:var(--am); }
+
+@media (max-width:480px){
+  #bar button{ min-width:30px; padding:6px 7px; }
+}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <span class="grp" id="tools">
+    <button data-t="pencil" class="on" title="matita">✏</button>
+    <button data-t="line"   title="linea">╱</button>
+    <button data-t="rect"   title="rettangolo">▭</button>
+    <button data-t="ellipse" title="ellisse">◯</button>
+    <button data-t="fill"   title="riempimento">▒</button>
+    <button data-t="spray"  title="spray">∴</button>
+    <button data-t="eraser" title="gomma">⌫</button>
+  </span>
+  <span class="grp" id="sizes">
+    <button data-s="1" title="fine">·</button>
+    <button data-s="3" class="on" title="medio">●</button>
+    <button data-s="7" title="grosso">⬤</button>
+  </span>
+  <span class="grp" id="colors"></span>
+  <span class="grp">
+    <button id="undo" title="annulla">↶</button>
+    <button id="clear" title="pulisci">CLR</button>
+    <button id="save" title="scarica png">SAVE</button>
+  </span>
+</div>
+
+<div id="wrap"><canvas id="cv" width="512" height="320"></canvas></div>
+
+<div id="status">
+  <span>PAINT.EXE v0.3 — nessun salvataggio automatico. mai.</span>
+  <span><span class="am" id="st-tool">matita</span> · <span id="st-xy">0,0</span></span>
+</div>
+
+<script>
+/* =========================================================
+   PAINT — disegno a stampi quadrati (look pixelato), forme
+   con anteprima da snapshot, flood fill, undo a pila.
+   ========================================================= */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d', { willReadFrequently: true });
+const W = cv.width, H = cv.height;
+const BG = '#0c0c0b';
+
+/* palette OS: fosfori + neutri */
+const COLORS = ['#d4f5a0', '#ffcc44', '#f0ede8', '#8a857e', '#3a3732',
+                '#ff6b5e', '#7ec8e3', '#0c0c0b'];
+
+let tool = 'pencil', color = COLORS[0], size = 3;
+let drawing = false, sx = 0, sy = 0, snap = null;
+const undoStack = [];
+
+/* fondo iniziale */
+ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+
+/* --- toolbar --- */
+const toolNames = { pencil:'matita', line:'linea', rect:'rettangolo',
+  ellipse:'ellisse', fill:'riempimento', spray:'spray', eraser:'gomma' };
+const toolsEl = document.getElementById('tools');
+toolsEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  toolsEl.querySelectorAll('button').forEach((x) => x.classList.remove('on'));
+  b.classList.add('on');
+  tool = b.dataset.t;
+  document.getElementById('st-tool').textContent = toolNames[tool];
+});
+const sizesEl = document.getElementById('sizes');
+sizesEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  sizesEl.querySelectorAll('button').forEach((x) => x.classList.remove('on'));
+  b.classList.add('on');
+  size = +b.dataset.s;
+});
+/* swatch colori */
+const colorsEl = document.getElementById('colors');
+COLORS.forEach((c, i) => {
+  const s = document.createElement('span');
+  s.className = 'sw' + (i === 0 ? ' on' : '');
+  s.style.background = c;
+  s.addEventListener('click', () => {
+    colorsEl.querySelectorAll('.sw').forEach((x) => x.classList.remove('on'));
+    s.classList.add('on');
+    color = c;
+  });
+  colorsEl.appendChild(s);
+});
+
+/* --- undo / clear / save --- */
+function pushUndo(){
+  undoStack.push(ctx.getImageData(0, 0, W, H));
+  if(undoStack.length > 25) undoStack.shift();
+}
+document.getElementById('undo').addEventListener('click', () => {
+  const im = undoStack.pop();
+  if(im) ctx.putImageData(im, 0, 0);
+});
+document.getElementById('clear').addEventListener('click', () => {
+  pushUndo();
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+});
+document.getElementById('save').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.download = 'lzyyy-paint.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+});
+
+/* --- primitive a stampo quadrato (look pixelato) --- */
+function stamp(x, y, col){
+  const h = size >> 1;
+  ctx.fillStyle = col;
+  ctx.fillRect(Math.round(x) - h, Math.round(y) - h, size, size);
+}
+/* plotLine: Bresenham con stampi */
+function plotLine(x0, y0, x1, y1, col){
+  x0 |= 0; y0 |= 0; x1 |= 0; y1 |= 0;
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0);
+  const sxx = x0 < x1 ? 1 : -1, syy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+  for(;;){
+    stamp(x0, y0, col);
+    if(x0 === x1 && y0 === y1) break;
+    const e2 = 2 * err;
+    if(e2 >= dy){ err += dy; x0 += sxx; }
+    if(e2 <= dx){ err += dx; y0 += syy; }
+  }
+}
+function plotRect(x0, y0, x1, y1, col){
+  plotLine(x0, y0, x1, y0, col); plotLine(x1, y0, x1, y1, col);
+  plotLine(x1, y1, x0, y1, col); plotLine(x0, y1, x0, y0, col);
+}
+function plotEllipse(x0, y0, x1, y1, col){
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const rx = Math.max(1, Math.abs(x1 - x0) / 2), ry = Math.max(1, Math.abs(y1 - y0) / 2);
+  const steps = Math.max(24, (rx + ry) * 2);
+  let px = cx + rx, py = cy;
+  for(let i = 1; i <= steps; i++){
+    const a = i / steps * Math.PI * 2;
+    const nx = cx + Math.cos(a) * rx, ny = cy + Math.sin(a) * ry;
+    plotLine(px, py, nx, ny, col);
+    px = nx; py = ny;
+  }
+}
+/* spray: punti casuali nel raggio */
+function spray(x, y, col){
+  ctx.fillStyle = col;
+  const r = size * 4;
+  for(let n = 0; n < 12; n++){
+    const a = Math.random() * Math.PI * 2, d = Math.random() * r;
+    ctx.fillRect(Math.round(x + Math.cos(a) * d), Math.round(y + Math.sin(a) * d), 1, 1);
+  }
+}
+/* flood fill iterativo su ImageData (match esatto) */
+function floodFill(x, y, col){
+  x |= 0; y |= 0;
+  const im = ctx.getImageData(0, 0, W, H), d = im.data;
+  const t = document.createElement('canvas').getContext('2d');
+  t.fillStyle = col; t.fillRect(0, 0, 1, 1);
+  const [fr, fg, fb] = t.getImageData(0, 0, 1, 1).data;
+  const i0 = (y * W + x) * 4;
+  const tr = d[i0], tg = d[i0+1], tb = d[i0+2];
+  if(tr === fr && tg === fg && tb === fb) return;
+  const stack = [[x, y]];
+  while(stack.length){
+    const [px, py] = stack.pop();
+    if(px < 0 || px >= W || py < 0 || py >= H) continue;
+    const i = (py * W + px) * 4;
+    if(d[i] !== tr || d[i+1] !== tg || d[i+2] !== tb) continue;
+    d[i] = fr; d[i+1] = fg; d[i+2] = fb; d[i+3] = 255;
+    stack.push([px+1, py], [px-1, py], [px, py+1], [px, py-1]);
+  }
+  ctx.putImageData(im, 0, 0);
+}
+
+/* --- input puntatore --- */
+/* getPos(e): coordinate canvas dalla posizione su schermo */
+function getPos(e){
+  const r = cv.getBoundingClientRect();
+  return [ (e.clientX - r.left) * W / r.width,
+           (e.clientY - r.top)  * H / r.height ];
+}
+cv.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  cv.setPointerCapture(e.pointerId);
+  const [x, y] = getPos(e);
+  pushUndo();
+  drawing = true; sx = x; sy = y;
+  if(tool === 'fill'){ floodFill(x, y, color); drawing = false; return; }
+  if(tool === 'pencil') stamp(x, y, color);
+  if(tool === 'eraser') stamp(x, y, BG);
+  if(tool === 'spray')  spray(x, y, color);
+  // forme: snapshot per l'anteprima
+  if(tool === 'line' || tool === 'rect' || tool === 'ellipse')
+    snap = ctx.getImageData(0, 0, W, H);
+});
+cv.addEventListener('pointermove', (e) => {
+  const [x, y] = getPos(e);
+  document.getElementById('st-xy').textContent = (x|0) + ',' + (y|0);
+  if(!drawing) return;
+  if(tool === 'pencil'){ plotLine(sx, sy, x, y, color); sx = x; sy = y; }
+  else if(tool === 'eraser'){ plotLine(sx, sy, x, y, BG); sx = x; sy = y; }
+  else if(tool === 'spray'){ spray(x, y, color); }
+  else if(snap){
+    ctx.putImageData(snap, 0, 0);     // anteprima: ripristina e ridisegna
+    if(tool === 'line')    plotLine(sx, sy, x, y, color);
+    if(tool === 'rect')    plotRect(sx, sy, x, y, color);
+    if(tool === 'ellipse') plotEllipse(sx, sy, x, y, color);
+  }
+});
+cv.addEventListener('pointerup', () => { drawing = false; snap = null; });
+cv.addEventListener('pointercancel', () => { drawing = false; snap = null; });
+</script>
+</body>
+</html>
