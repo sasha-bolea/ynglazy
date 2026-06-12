@@ -332,7 +332,7 @@ function selectRow(el){
 function activate(node){
   if(node.kind === 'folder' || node.kind === 'project') return go([...path, node.name]);
   if(node.kind === 'song')   return window.open(node.url, '_blank', 'noopener');
-  if(node.kind === 'file')   return flash('README.txt :: wtf');
+  if(node.kind === 'file')   return flash('README.txt :: lazy ma che caaaaaaaa[…]aaazzo');
   if(node.kind === 'sample') return flash(`${node.name} :: stream audio non montato`);
   if(node.kind === 'img')    return flash(`${node.name} :: anteprima non disponibile [render fallito]`);
   if(node.kind === 'video')  return flash(`${node.name} :: codec sconosciuto — solo glitch.`);
