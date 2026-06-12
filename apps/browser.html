@@ -370,12 +370,12 @@ function startDino(container){
     obstacles.push({ x: W + 10, w: 16 + Math.random()*10, h: 26 + Math.random()*30 });
   }
 
-  /* fumo dalla punta del joint (in basso a destra dello sprite) */
+  /* fumo dalla punta del joint (ora in alto, sopra lo sprite) */
   function drawSmoke(){
     if(started && !over){
       smoke.push({
-        x: dinoX + dinoW / 2 + 13,
-        y: dinoY + dinoH / 2 + 13,
+        x: dinoX + dinoW / 2,
+        y: dinoY + dinoH / 2 - 16,
         life: 1, ph: Math.random() * 6.28,
       });
     }
@@ -392,11 +392,15 @@ function startDino(container){
     }
   }
 
-  /* drawDino(): joint fisso (niente rotazione) */
+  /* drawDino(): joint verticale, punta accesa in alto */
   function drawDino(){
     const x = dinoX, y = dinoY;
     if(jointImg.complete && jointImg.naturalWidth){
-      ctx.drawImage(jointImg, x + dinoW / 2 - 20, y + dinoH / 2 - 20, 40, 40);
+      ctx.save();
+      ctx.translate(x + dinoW / 2, y + dinoH / 2);
+      ctx.rotate(-3 * Math.PI / 4);   // la diagonale dell'immagine diventa verticale
+      ctx.drawImage(jointImg, -20, -20, 40, 40);
+      ctx.restore();
       return;
     }
     // fallback se l'immagine non è (ancora) carica
