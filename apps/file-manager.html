@@ -154,6 +154,7 @@ body{
   <span class="warn">disco 0x4C5A · fs montato</span>
 </div>
 
+<script src="../js/fakefs.js"></script>
 <script>
 /* =========================================================
    FILE_MGR — dati + logica ad albero
@@ -188,6 +189,9 @@ const treeEl  = document.getElementById('fm-tree');
 const listEl  = document.getElementById('fm-list');
 const pathEl  = document.getElementById('fm-path');
 const countEl = document.getElementById('fm-count');
+
+/* contenuti integrali condivisi col terminale (js/fakefs.js) */
+const FS = window.LZYYY_FS || {};
 
 /* --- stato cestino condiviso col terminale (sessionStorage,
        vive fino alla chiusura del tab) --- */
@@ -240,10 +244,16 @@ function buildTree(){
       ...recovered,
     ]},
     { name:'Documenti', kind:'folder', children:[
-      { name:'README.txt',          kind:'file', dim:'1.2 KB', date:'1987-03-14',
-        content:'lazy ma che caaaaaaaa[…rumore…]aaazzo\n\n(versione integrale nel terminale: cat readme.txt)' },
+      { name:'README.txt',          kind:'file', dim:'22.4 KB', date:'1987-03-14',
+        content: FS['README.txt'] },
+      { name:'todo.txt',            kind:'file', dim:'0.1 KB', date:'1987-03-14',
+        content: FS['todo.txt'] },
+      { name:'password.txt',        kind:'file', dim:'0.1 KB', date:'1987-03-14',
+        content: FS['password.txt'] },
+      { name:'dev.txt',             kind:'file', dim:'1.7 KB', date:'2026-06-12',
+        content: FS['dev.txt'] },
       { name:'note_su_FFFFFF.txt',  kind:'file', dim:'0.4 KB', date:'2026-03-13',
-        content:'#FFFFFF è bianco.\ntutto il resto è commento.' },
+        content: FS['note_su_FFFFFF.txt'] },
       { name:'privacy.txt', kind:'policy', policy:'privacy', dim:'2.1 KB', date:'2026-06-12' },
       { name:'cookie.txt',  kind:'policy', policy:'cookie',  dim:'1.4 KB', date:'2026-06-12' },
     ]},

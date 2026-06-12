@@ -552,7 +552,11 @@
   margin: 0;
   font-family: var(--f-micro);
   font-size: 12px;
-  white-space: pre-wrap;
+  /* griglia monospace vera: niente wrapping, scroll orizzontale
+     (il readme è ascii art a 153 colonne) */
+  white-space: pre;
+  overflow: auto;
+  max-height: 60vh;
   color: var(--grey-d);
 }
 .fv-img {
