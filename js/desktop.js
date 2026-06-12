@@ -175,7 +175,10 @@
     win.innerHTML =
       `<div class="win-title">` +
         `<span>${def.glyph} ${def.label}</span>` +
-        `<span class="win-close" title="chiudi">×</span>` +
+        `<span class="win-btns">` +
+          `<span class="win-max" title="schermo intero">□</span>` +
+          `<span class="win-close" title="chiudi">×</span>` +
+        `</span>` +
       `</div>` +
       `<div class="win-body win-app">` +
         `<iframe src="${src}" title="${def.label}"></iframe>` +
@@ -188,7 +191,21 @@
 
     win.addEventListener('mousedown', () => { win.style.zIndex = ++winZ; });
     win.querySelector('.win-close').addEventListener('click', () => win.remove());
+    setupMaximize(win);
     if (!isMobile()) makeDraggable(win, win.querySelector('.win-title'));
+  }
+
+  /* -----------------------------------------------------------
+     setupMaximize(win): il bottone □ porta la finestra a schermo
+     intero; un altro click la riporta a posizione e misura prima.
+     ----------------------------------------------------------- */
+  function setupMaximize(win) {
+    const btn = win.querySelector('.win-max');
+    btn.addEventListener('click', () => {
+      const on = win.classList.toggle('maximized');
+      btn.textContent = on ? '❐' : '□';
+      btn.title = on ? 'riduci' : 'schermo intero';
+    });
   }
 
   /* -----------------------------------------------------------
@@ -207,7 +224,10 @@
     win.innerHTML =
       `<div class="win-title">` +
         `<span>${def.glyph} ${def.label}</span>` +
-        `<span class="win-close" title="chiudi">×</span>` +
+        `<span class="win-btns">` +
+          `<span class="win-max" title="schermo intero">□</span>` +
+          `<span class="win-close" title="chiudi">×</span>` +
+        `</span>` +
       `</div>` +
       `<div class="win-body">` +
         `<span class="am">[${def.app}]</span> non ancora installato.<br>` +
@@ -218,6 +238,7 @@
 
     win.addEventListener('mousedown', () => { win.style.zIndex = ++winZ; });
     win.querySelector('.win-close').addEventListener('click', () => win.remove());
+    setupMaximize(win);
     if (!isMobile()) makeDraggable(win, win.querySelector('.win-title'));
   }
 
@@ -229,7 +250,9 @@
     let ox = 0, oy = 0, dragging = false;
 
     handle.addEventListener('mousedown', (e) => {
-      if (e.target.classList.contains('win-close')) return;
+      if (e.target.classList.contains('win-close') ||
+          e.target.classList.contains('win-max')) return;
+      if (win.classList.contains('maximized')) return;  // niente drag da massimizzata
       dragging = true;
       ox = e.clientX - win.offsetLeft;
       oy = e.clientY - win.offsetTop;

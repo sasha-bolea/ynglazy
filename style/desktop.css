@@ -466,3 +466,34 @@
 }
 #crash-screen .blink { animation: crash-blink 1s steps(2) infinite; }
 @keyframes crash-blink { 50% { opacity: 0; } }
+
+/* =========================================================
+   Massimizza/riduci finestre (bottone nella titlebar)
+   ========================================================= */
+.win-btns { display: flex; gap: 4px; }
+.win-max {
+  width: 16px;
+  height: 16px;
+  line-height: 15px;
+  text-align: center;
+  background: var(--grey-m);
+  color: var(--black);
+  cursor: crosshair;
+  font-size: 10px;
+}
+.win-max:hover { background: var(--am); }
+
+.win.maximized {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100vw !important;
+  height: calc(100vh - var(--taskbar-h)) !important;
+  height: calc(100dvh - var(--taskbar-h)) !important;
+}
+.win.maximized .win-body { flex: 1; }
+.win.maximized .win-body.win-app { height: auto !important; }
+
+/* Su mobile le finestre sono gia fullscreen: bottone inutile */
+@media (max-width: 768px) {
+  .win-max { display: none; }
+}
