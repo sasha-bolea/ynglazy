@@ -1,6 +1,19 @@
 {
-  "updated": "2026-06-07T14:08:08.144Z",
+  "updated": "2026-06-12T04:03:34.453Z",
   "projects": [
+    {
+      "name": "sole",
+      "type": "single",
+      "date": "2026-06-12",
+      "url": "https://open.spotify.com/album/2M1dFTWP9OxnpGAZxMVXzj",
+      "tracks": [
+        {
+          "name": "sole",
+          "ms": 182950,
+          "url": "https://open.spotify.com/track/2lSIjNSHp4HfrZxdEtI6Nj"
+        }
+      ]
+    },
     {
       "name": "#FFFFFF",
       "type": "album",
