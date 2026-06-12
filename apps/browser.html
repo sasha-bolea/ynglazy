@@ -370,14 +370,12 @@ function startDino(container){
     obstacles.push({ x: W + 10, w: 16 + Math.random()*10, h: 26 + Math.random()*30 });
   }
 
-  /* fumo dalla punta del joint (segue la rotazione a 4 frame) */
+  /* fumo dalla punta del joint (in basso a destra dello sprite) */
   function drawSmoke(){
     if(started && !over){
-      const a = (Math.floor(dist / 40) % 4) * Math.PI / 2;
-      const d = 13;
       smoke.push({
-        x: dinoX + dinoW / 2 + d * Math.cos(a) - d * Math.sin(a),
-        y: dinoY + dinoH / 2 + d * Math.sin(a) + d * Math.cos(a),
+        x: dinoX + dinoW / 2 + 13,
+        y: dinoY + dinoH / 2 + 13,
         life: 1, ph: Math.random() * 6.28,
       });
     }
@@ -394,17 +392,11 @@ function startDino(container){
     }
   }
 
-  /* drawDino(): joint che rotola — camminata a 4 frame di
-     rotazione (90° l'uno) legati alla distanza percorsa */
+  /* drawDino(): joint fisso (niente rotazione) */
   function drawDino(){
     const x = dinoX, y = dinoY;
     if(jointImg.complete && jointImg.naturalWidth){
-      const frame = Math.floor(dist / 40) % 4;
-      ctx.save();
-      ctx.translate(x + dinoW / 2, y + dinoH / 2);
-      ctx.rotate(frame * Math.PI / 2);
-      ctx.drawImage(jointImg, -20, -20, 40, 40);
-      ctx.restore();
+      ctx.drawImage(jointImg, x + dinoW / 2 - 20, y + dinoH / 2 - 20, 40, 40);
       return;
     }
     // fallback se l'immagine non è (ancora) carica
