@@ -221,15 +221,25 @@ fetch('../data/discography.json')
   })
   .catch(() => {});
 
+/* link diretti per release (quando li abbiamo); le release future
+   senza voce qui ripiegano sulla ricerca */
+const DIRECT = {
+  sole: {
+    apple:   'https://music.apple.com/us/song/sole/6775521781',
+    youtube: 'https://youtu.be/Y72sFjVZDLU',
+  },
+};
+
 /* releaseLinks(): spotify diretto + song.link (risolve tutte le
-   piattaforme dall'url spotify) + ricerche dirette */
+   piattaforme dall'url spotify) + apple/youtube diretti o ricerca */
 function releaseLinks(){
   const q = encodeURIComponent('lazyyy ' + RELEASE.name);
+  const d = DIRECT[RELEASE.name.toLowerCase()] || {};
   return [
     { label:'SPOTIFY',              url: RELEASE.url, main:true },
     { label:'TUTTE LE PIATTAFORME', url: 'https://song.link/' + encodeURIComponent(RELEASE.url), main:true },
-    { label:'APPLE MUSIC',          url: 'https://music.apple.com/search?term=' + q },
-    { label:'YOUTUBE',              url: 'https://www.youtube.com/results?search_query=' + q },
+    { label:'APPLE MUSIC',          url: d.apple   || 'https://music.apple.com/search?term=' + q },
+    { label:'YOUTUBE',              url: d.youtube || 'https://www.youtube.com/results?search_query=' + q },
   ];
 }
 
