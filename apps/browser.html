@@ -403,7 +403,7 @@ function startDino(container){
       for(let n = 0; n < 3; n++)
         smoke.push({
           x: dinoX + dinoW / 2 + (Math.random() * 5 - 2.5),
-          y: dinoY + dinoH / 2 - 21,
+          y: dinoY + dinoH - 47,      // cima dello sprite ancorato a terra
           life: 1, ph: Math.random() * 6.28,
         });
     }
@@ -427,7 +427,8 @@ function startDino(container){
   function drawDino(){
     if(!jointImg.complete || !jointImg.naturalWidth) return;
     ctx.save();
-    ctx.translate(dinoX + dinoW / 2, dinoY + dinoH / 2);
+    // ancorato al fondo della hitbox: i piedi stanno sull'orizzonte
+    ctx.translate(dinoX + dinoW / 2, dinoY + dinoH - 26);
     ctx.rotate(-3 * Math.PI / 4);
     ctx.drawImage(jointImg, -26, -26, 52, 52);
     ctx.restore();
