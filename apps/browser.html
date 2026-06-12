@@ -153,6 +153,11 @@ body{
   font-family:'VT323',monospace; font-size:34px; color:var(--grey-m);
   box-shadow:0 0 18px rgba(212,245,160,.15);
 }
+.ps .cover-img{
+  width:160px; height:160px; margin-bottom:26px; display:block;
+  border:1px solid var(--grey-m); object-fit:cover;
+  box-shadow:0 0 18px rgba(212,245,160,.15);
+}
 .ps .links{ display:flex; flex-direction:column; gap:10px; width:min(320px,90%); }
 .ps a.cta{
   display:flex; align-items:center; justify-content:space-between;
@@ -221,26 +226,30 @@ fetch('../data/discography.json')
   })
   .catch(() => {});
 
-/* link diretti per release (quando li abbiamo); le release future
-   senza voce qui ripiegano sulla ricerca */
+/* link diretti e copertina locale per release; le release future
+   senza voce qui ripiegano su spotify + ricerche */
 const DIRECT = {
   sole: {
-    apple:   'https://music.apple.com/us/song/sole/6775521781',
-    youtube: 'https://youtu.be/Y72sFjVZDLU',
+    cover: '../img/cover-sole.jpg',
+    links: [
+      { label:'APPLE MUSIC', url:'https://music.apple.com/us/song/sole/6775521781' },
+      { label:'YOUTUBE',     url:'https://youtu.be/Y72sFjVZDLU' },
+      { label:'TIDAL',       url:'https://listen.tidal.com/track/529740590' },
+      { label:'PANDORA',     url:'https://www.pandora.com/TR:206526387' },
+    ],
   },
 };
 
-/* releaseLinks(): spotify diretto + song.link (risolve tutte le
-   piattaforme dall'url spotify) + apple/youtube diretti o ricerca */
+/* releaseLinks(): spotify diretto + link per piattaforma (diretti
+   se censiti in DIRECT, altrimenti ricerche) */
 function releaseLinks(){
   const q = encodeURIComponent('lazyyy ' + RELEASE.name);
-  const d = DIRECT[RELEASE.name.toLowerCase()] || {};
-  return [
-    { label:'SPOTIFY',              url: RELEASE.url, main:true },
-    { label:'TUTTE LE PIATTAFORME', url: 'https://song.link/' + encodeURIComponent(RELEASE.url), main:true },
-    { label:'APPLE MUSIC',          url: d.apple   || 'https://music.apple.com/search?term=' + q },
-    { label:'YOUTUBE',              url: d.youtube || 'https://www.youtube.com/results?search_query=' + q },
+  const d = DIRECT[RELEASE.name.toLowerCase()];
+  const extra = d ? d.links : [
+    { label:'APPLE MUSIC', url:'https://music.apple.com/search?term=' + q },
+    { label:'YOUTUBE',     url:'https://www.youtube.com/results?search_query=' + q },
   ];
+  return [{ label:'SPOTIFY', url: RELEASE.url, main:true }, ...extra];
 }
 
 const pageEl = document.getElementById('bw-page');
@@ -324,7 +333,11 @@ function closeTab(id){
 /* renderRelease(): pagina interna con l'ultima uscita e i link
    alle piattaforme (solo <a>, niente iframe) */
 function renderRelease(){
-  const glyph = RELEASE.name.toLowerCase().includes('sole') ? '☀' : '♪';
+  const d = DIRECT[RELEASE.name.toLowerCase()];
+  // copertina locale se censita, altrimenti glifo
+  const cover = d && d.cover
+    ? `<img class="cover-img" src="${esc(d.cover)}" alt="${esc(RELEASE.name)}">`
+    : `<div class="cover">${RELEASE.name.toLowerCase().includes('sole') ? '☀' : '♪'}</div>`;
   const links = releaseLinks().map((l) =>
     `<a class="cta${l.main ? '' : ' ghost'}" href="${esc(l.url)}" target="_blank" rel="noopener">` +
       `<span>${esc(l.label)}</span><span>⇗</span></a>`).join('');
@@ -333,7 +346,7 @@ function renderRelease(){
       `<div class="kick">OUT NOW</div>` +
       `<h1>${esc(RELEASE.name)}</h1>` +
       `<div class="meta">lazyyy · ${esc(RELEASE.type)} · ${esc(RELEASE.date)}</div>` +
-      `<div class="cover">${glyph}</div>` +
+      cover +
       `<div class="links">${links}</div>` +
       `<div class="note">nessun contenuto esterno incorporato — ` +
       `i link aprono le piattaforme in una scheda nuova.</div>` +
