@@ -446,9 +446,9 @@ function runCorrupt(){
      con lui), derivano a onda e svaniscono allargandosi */
   const smoke = [];
   function drawSmoke(rot){
-    const off = 44 * .38;                        // punta accesa: angolo in basso a destra
-    const tx = W / 2 + off * Math.cos(rot) - off * Math.sin(rot);
-    const ty = H / 2 + off * Math.sin(rot) + off * Math.cos(rot);
+    const off = 20;                              // brace: estremità sinistra dell'immagine
+    const tx = W / 2 - off * Math.cos(rot);
+    const ty = H / 2 - off * Math.sin(rot);
     for(let n = 0; n < 4; n++)
       smoke.push({ x: tx + (Math.random() * 3 - 1.5), y: ty, life: 1, ph: Math.random() * 6.28 });
     for(let i = smoke.length - 1; i >= 0; i--){
@@ -469,11 +469,12 @@ function runCorrupt(){
      doppi fantasma in additive */
   function drawImgGlitched(im, cx, cy, size, rot, clean){
     if(!im.complete || !im.naturalWidth) return;
+    const ar = im.naturalHeight / im.naturalWidth;   // proporzioni native
     g.save();
     g.translate(cx, cy);
     g.rotate(rot);
     if(clean){
-      g.drawImage(im, -size / 2, -size / 2, size, size);
+      g.drawImage(im, -size / 2, -size * ar / 2, size, size * ar);
       g.restore();
       return;
     }
@@ -481,16 +482,16 @@ function runCorrupt(){
     const r = Math.random();
     if(r < .25) g.filter = `hue-rotate(${Math.random()*360|0}deg) saturate(${2+Math.random()*6})`;
     else if(r < .4) g.filter = 'invert(1)';
-    const s = size * (.85 + Math.random() * .4);
+    const s = size * (.85 + Math.random() * .4), sh = s * ar;
     g.globalAlpha = .9;
-    g.drawImage(im, -s / 2 + j(), -s / 2 + j(), s, s);
+    g.drawImage(im, -s / 2 + j(), -sh / 2 + j(), s, sh);
     // fantasmi sdoppiati in additive
     g.globalCompositeOperation = 'lighter';
     g.globalAlpha = .3;
     g.filter = 'hue-rotate(120deg)';
-    g.drawImage(im, -s / 2 + 2 + j(), -s / 2, s, s);
+    g.drawImage(im, -s / 2 + 2 + j(), -sh / 2, s, sh);
     g.filter = 'hue-rotate(240deg)';
-    g.drawImage(im, -s / 2 - 2, -s / 2 + j(), s, s);
+    g.drawImage(im, -s / 2 - 2, -sh / 2 + j(), s, sh);
     g.restore();
   }
 
@@ -508,7 +509,7 @@ function runCorrupt(){
     const imgsOn = now - t0 >= IMG_MS;
     const clean = now - t0 < IMG_MS + 5000;
     function drawImgs(){
-      drawImgGlitched(joint, W / 2, H / 2, 44, t * 1.4, clean);
+      drawImgGlitched(joint, W / 2, H / 2, 56, t * 1.4, clean);
       drawSmoke(t * 1.4);
       const lr = t * 2.6;
       drawImgGlitched(leaf, 10,     8,     18,  lr, clean);
