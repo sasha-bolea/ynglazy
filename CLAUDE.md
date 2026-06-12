@@ -123,6 +123,7 @@ ynglazy/
 | Browser | apps/browser.html | ✅ FATTO | Presave orcd.co + scheda OFFLINE con gioco dino |
 | Terminale | apps/terminal.html | ✅ FATTO | Comandi fake; EE-05 `secret` → drone audio nascosto |
 | Chess | apps/chess.html | ✅ FATTO | Mac System 6/7 1-bit, iso pixel-art, motore reale (perft-verificato), CPU 3 livelli |
+| Paint | apps/paint.html | ✅ FATTO | PAINT.EXE: canvas 512×320 pixelato, 7 strumenti, flood fill, undo, save PNG, touch-ready |
 | About.exe | — | ❌ RIMOSSA | Fatta e poi tolta su richiesta (2026-06-10) |
 | SampleBank | — | ❌ RIMOSSA | Fatta e poi tolta su richiesta (2026-06-10) |
 
