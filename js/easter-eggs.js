@@ -85,20 +85,52 @@
       privacy: {
         title: 'PRIVACY.TXT',
         body:
-          `Questo sito non raccoglie dati personali.<br>` +
-          `Niente account, niente form, niente tracker, niente analytics.<br><br>` +
-          `I font arrivano da Google Fonts: quando li scarichi, Google ` +
-          `vede il tuo indirizzo IP (è l'unico).<br><br>` +
-          `Tutto il resto vive e muore nel tuo browser.`,
+          `<b>Informativa sul trattamento dei dati personali</b><br>` +
+          `<i>ai sensi degli artt. 13 e 14 del Regolamento (UE) 2016/679 ("GDPR")</i><br><br>` +
+          `<b>1. Titolare del trattamento.</b> Titolare del trattamento è il gestore ` +
+          `del presente sito, contattabile tramite i recapiti indicati su ` +
+          `alessandrobolea.com.<br><br>` +
+          `<b>2. Dati trattati.</b> Il presente sito ha natura esclusivamente statica: ` +
+          `non prevede registrazione, moduli di contatto, commenti o altre forme di ` +
+          `conferimento di dati. Il Titolare non raccoglie, registra, conserva né ` +
+          `tratta in alcun modo dati personali degli utenti.<br><br>` +
+          `<b>3. Font di terze parti.</b> Le risorse tipografiche sono erogate dal ` +
+          `servizio Google Fonts di Google LLC. All'atto del caricamento, il browser ` +
+          `dell'utente trasmette ai server di Google il proprio indirizzo IP, dato ` +
+          `qualificabile come personale. Tale trattamento, effettuato da Google in ` +
+          `qualità di autonomo titolare, trova base giuridica nel legittimo interesse ` +
+          `del gestore (art. 6, par. 1, lett. f GDPR) alla resa uniforme dell'interfaccia. ` +
+          `Si rinvia all'informativa di Google: policies.google.com/privacy.<br><br>` +
+          `<b>4. Trasferimenti, profilazione, decisioni automatizzate.</b> Non sono ` +
+          `effettuati trasferimenti di dati a cura del Titolare, né attività di ` +
+          `profilazione o processi decisionali automatizzati ai sensi dell'art. 22 GDPR.<br><br>` +
+          `<b>5. Diritti dell'interessato.</b> L'interessato può esercitare i diritti ` +
+          `di cui agli artt. 15-22 GDPR (accesso, rettifica, cancellazione, limitazione, ` +
+          `portabilità, opposizione) rivolgendosi al Titolare, e ha diritto di proporre ` +
+          `reclamo al Garante per la protezione dei dati personali (art. 77 GDPR).`,
       },
       cookie: {
         title: 'COOKIE.TXT',
         body:
-          `Questo sito non usa cookie.<br><br>` +
-          `Usa sessionStorage per ricordare lo stato del cestino: ` +
-          `sparisce quando chiudi la scheda e non viene inviato a nessuno.<br><br>` +
-          `Niente profilazione, niente terze parti.<br>` +
-          `(le "3 minacce rilevate" non sono reali. forse.)`,
+          `<b>Cookie policy</b><br>` +
+          `<i>ai sensi dell'art. 122 del D.lgs. 196/2003 e delle Linee guida del ` +
+          `Garante del 10 giugno 2021</i><br><br>` +
+          `<b>1. Assenza di cookie.</b> Il presente sito non installa cookie di alcuna ` +
+          `natura: né tecnici, né analitici, né di profilazione, né di terze parti. ` +
+          `Nessun identificatore è depositato sul dispositivo dell'utente né letto ` +
+          `da esso a fini di tracciamento.<br><br>` +
+          `<b>2. Memorizzazione locale (sessionStorage).</b> Il sito si avvale della ` +
+          `tecnologia sessionStorage del browser al solo fine di conservare, per la ` +
+          `durata della singola sessione di navigazione, lo stato funzionale ` +
+          `dell'interfaccia (es. ripristino di elementi dal cestino virtuale). Tali ` +
+          `informazioni: (a) non contengono dati personali; (b) non vengono trasmesse ` +
+          `al gestore né a terzi; (c) sono cancellate automaticamente alla chiusura ` +
+          `della scheda. Trattandosi di memorizzazione strettamente necessaria ` +
+          `all'erogazione del servizio esplicitamente richiesto, essa è esente ` +
+          `dall'obbligo di consenso ai sensi dell'art. 122, comma 1, del Codice Privacy.<br><br>` +
+          `<b>3. Consenso.</b> In assenza di cookie o tecnologie assimilate soggette ` +
+          `a consenso, non è richiesta la prestazione di alcun consenso preventivo ` +
+          `né l'esposizione di banner ai sensi delle citate Linee guida.`,
       },
     };
     const def = POLICIES[kind];
@@ -107,11 +139,11 @@
     win.className = 'win';
     win.id = 'policy-' + kind;
     win.style.cssText = 'position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);' +
-      'z-index:9000;max-width:360px;width:90%;';
+      'z-index:9000;max-width:420px;width:92%;max-height:72vh;';
     win.innerHTML =
       `<div class="win-title"><span>▤ ${def.title}</span>` +
       `<span class="win-close" title="chiudi">×</span></div>` +
-      `<div class="win-body">${def.body}</div>`;
+      `<div class="win-body" style="overflow-y:auto">${def.body}</div>`;
     win.querySelector('.win-close').onclick = () => win.remove();
     document.body.appendChild(win);
   }
