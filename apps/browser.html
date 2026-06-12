@@ -343,9 +343,11 @@ function startDino(container){
   const dinoX = 36, dinoW = 22, dinoH = 24;
   const G = 0.7, JUMP = -11;
   let dinoY, vy, onGround, speed, dist, spawnIn, obstacles, score, hi = 0, over, started;
+  let smoke = [];      // particelle di fumo del joint
   function reset(){
     vy = 0; onGround = true; speed = 5; dist = 0; spawnIn = 60;
     obstacles = []; score = 0; over = false; started = false;
+    smoke = [];
     dinoY = groundY - dinoH;
   }
   resize(); reset(); ro.observe(cv);
@@ -363,9 +365,33 @@ function startDino(container){
   // pointerdown copre mouse e touch
   cv.addEventListener('pointerdown', (e) => { e.preventDefault(); jump(); });
 
-  /* spawn(): genera un cactus a destra */
+  /* spawn(): genera una foglia a destra */
   function spawn(){
-    obstacles.push({ x: W + 10, w: 10 + Math.random()*8, h: 18 + Math.random()*26 });
+    obstacles.push({ x: W + 10, w: 16 + Math.random()*10, h: 26 + Math.random()*30 });
+  }
+
+  /* fumo dalla punta del joint (segue la rotazione a 4 frame) */
+  function drawSmoke(){
+    if(started && !over){
+      const a = (Math.floor(dist / 40) % 4) * Math.PI / 2;
+      const d = 13;
+      smoke.push({
+        x: dinoX + dinoW / 2 + d * Math.cos(a) - d * Math.sin(a),
+        y: dinoY + dinoH / 2 + d * Math.sin(a) + d * Math.cos(a),
+        life: 1, ph: Math.random() * 6.28,
+      });
+    }
+    for(let i = smoke.length - 1; i >= 0; i--){
+      const p = smoke[i];
+      p.life -= .02;
+      if(p.life <= 0){ smoke.splice(i, 1); continue; }
+      p.y -= .7;
+      p.x -= speed * .35;                       // scia verso sinistra col mondo
+      p.x += Math.sin(p.ph + p.life * 8) * .4;
+      ctx.fillStyle = `rgba(255,255,255,${(p.life * .7).toFixed(2)})`;
+      const sz = p.life > .5 ? 2 : 3;
+      ctx.fillRect(p.x | 0, p.y | 0, sz, sz);
+    }
   }
 
   /* drawDino(): joint che rotola — camminata a 4 frame di
@@ -377,7 +403,7 @@ function startDino(container){
       ctx.save();
       ctx.translate(x + dinoW / 2, y + dinoH / 2);
       ctx.rotate(frame * Math.PI / 2);
-      ctx.drawImage(jointImg, -14, -14, 28, 28);
+      ctx.drawImage(jointImg, -20, -20, 40, 40);
       ctx.restore();
       return;
     }
@@ -411,7 +437,7 @@ function startDino(container){
       if(started && !over) o.x -= speed;
       if(leafImg.complete && leafImg.naturalWidth){
         // foglia: leggermente più larga della hitbox (più onesta del contrario)
-        ctx.drawImage(leafImg, o.x - 3, groundY - o.h, o.w + 6, o.h);
+        ctx.drawImage(leafImg, o.x - 4, groundY - o.h, o.w + 8, o.h);
       } else {
         ctx.fillRect(o.x, groundY - o.h, o.w, o.h);              // tronco
         ctx.fillRect(o.x-3, groundY - o.h*0.5, 3, 6);            // braccio sx
@@ -424,6 +450,7 @@ function startDino(container){
     obstacles = obstacles.filter(o => o.x + o.w > -5);
 
     drawDino();
+    drawSmoke();
     scEl.textContent = String(score).padStart(4, '0');
     hiEl.textContent = String(hi).padStart(4, '0');
 
