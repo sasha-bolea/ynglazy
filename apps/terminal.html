@@ -664,6 +664,11 @@ const COMMANDS = {
   },
   clear(){ out.innerHTML = ''; },
   sudo(){ print('no.', 'am'); },
+  /* avvio diretto del glitch di [CORROTTO].prj (comando nascosto) */
+  glitch(){
+    print('avvio manuale di [CORROTTO].prj…', 'err');
+    setTimeout(runCorrupt, 600);
+  },
   exit(){ print('non si esce da LZYYY_SYS.', 'dim'); },
   /* EE-05: comando segreto → messaggio + audio nascosto */
   secret(){
