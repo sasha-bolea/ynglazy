@@ -373,7 +373,7 @@ function startDino(container){
   function drawDino(){
     const x = dinoX, y = dinoY;
     if(jointImg.complete && jointImg.naturalWidth){
-      const frame = Math.floor(dist / 12) % 4;
+      const frame = Math.floor(dist / 40) % 4;
       ctx.save();
       ctx.translate(x + dinoW / 2, y + dinoH / 2);
       ctx.rotate(frame * Math.PI / 2);
