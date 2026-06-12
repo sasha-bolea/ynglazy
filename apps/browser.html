@@ -397,6 +397,53 @@ function startDino(container){
     obstacles.push({ x: W + 10, w: 22 + Math.random()*12, h: 34 + Math.random()*32 });
   }
 
+  /* =========================================================
+     COLLISIONI PIXEL-PERFECT — maschere alpha delle immagini.
+     Canna: baked già ruotata (-135°) in un canvas 74x74 (la
+     diagonale del quadrato 52x52 ruotato sborda dal box).
+     Foglia: alpha a risoluzione nativa, campionata in scala.
+     ========================================================= */
+  const JM = 74, JH = JM / 2;          // lato e mezzo-lato della maschera canna
+  let jointMask = null, leafMask = null, leafW = 0, leafH = 0;
+  function buildMasks(){
+    if(!jointMask && jointImg.complete && jointImg.naturalWidth){
+      const c = document.createElement('canvas'); c.width = c.height = JM;
+      const g = c.getContext('2d');
+      g.translate(JH, JH); g.rotate(-3 * Math.PI / 4);
+      g.drawImage(jointImg, -26, -26, 52, 52);
+      jointMask = g.getImageData(0, 0, JM, JM).data;
+    }
+    if(!leafMask && leafImg.complete && leafImg.naturalWidth){
+      leafW = leafImg.naturalWidth; leafH = leafImg.naturalHeight;
+      const c = document.createElement('canvas'); c.width = leafW; c.height = leafH;
+      const g = c.getContext('2d');
+      g.drawImage(leafImg, 0, 0);
+      leafMask = g.getImageData(0, 0, leafW, leafH).data;
+    }
+  }
+
+  /* pixelHit(o): vero se un pixel visibile della canna tocca un
+     pixel visibile della foglia o (soglia alpha 60) */
+  function pixelHit(o){
+    const lx = o.x - 4, ly = groundY - o.h, lw = o.w + 8, lh = o.h;
+    const jx = dinoX + dinoW / 2 - JH, jy = dinoY + dinoH - 26 - JH;
+    const x0 = Math.max(jx, lx) | 0, x1 = Math.min(jx + JM, lx + lw) | 0;
+    const y0 = Math.max(jy, ly) | 0, y1 = Math.min(jy + JM, ly + lh) | 0;
+    if(x0 >= x1 || y0 >= y1) return false;
+    buildMasks();
+    if(!jointMask || !leafMask)        // immagini non pronte: vecchio AABB
+      return dinoX < o.x + o.w && dinoX + dinoW > o.x && dinoY + dinoH > groundY - o.h;
+    for(let y = y0; y < y1; y++){
+      for(let x = x0; x < x1; x++){
+        if(jointMask[(((y - jy) | 0) * JM + ((x - jx) | 0)) * 4 + 3] < 60) continue;
+        const sx = (x - lx) / lw * leafW | 0;
+        const sy = (y - ly) / lh * leafH | 0;
+        if(leafMask[(sy * leafW + sx) * 4 + 3] >= 60) return true;
+      }
+    }
+    return false;
+  }
+
   /* fumo dalla punta del joint (ora in alto, sopra lo sprite) */
   function drawSmoke(){
     if(started && !over){
@@ -454,7 +501,7 @@ function startDino(container){
       // niente fallback cactus: senza immagine non si disegna nulla
       if(leafImg.complete && leafImg.naturalWidth)
         ctx.drawImage(leafImg, o.x - 4, groundY - o.h, o.w + 8, o.h);
-      if(!over && dinoX < o.x + o.w && dinoX + dinoW > o.x && dinoY + dinoH > groundY - o.h){
+      if(!over && pixelHit(o)){
         over = true; hi = Math.max(hi, score);
       }
     }
