@@ -285,6 +285,7 @@ function runCorrupt(){
   ov.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;z-index:99;background:#000;image-rendering:pixelated';
   document.body.appendChild(ov);
   const g = ov.getContext('2d');
+  g.imageSmoothingEnabled = false;     // pixel art nitida, niente lisciatura
   const img = g.createImageData(W, H);
   const d = img.data;
 
@@ -500,14 +501,14 @@ function runCorrupt(){
     const t = (now - t0) / 1000;
     if(now - t0 >= DUR) return end();
     const slot = Math.floor((now - t0) / MODE_MS);
-    // slot pari pixelati, dispari lisci
-    ov.style.imageRendering = slot % 2 === 0 ? 'pixelated' : 'auto';
-    MODES[slot % MODES.length](t);
-
-    // immagini: per i primi 5s pulite e sopra tutto, poi glitchate
+    // immagini: prima finestra pulita e sopra tutto, poi glitchate
     // prima della corruzione (così blocchi/tearing le spezzano)
     const imgsOn = now - t0 >= IMG_MS;
-    const clean = now - t0 < IMG_MS + 5000;
+    const clean = now - t0 < IMG_MS + 12000;
+    // slot pari pixelati, dispari lisci — ma con le immagini pulite
+    // a schermo resta sempre pixelato (la pixel art non va lisciata)
+    ov.style.imageRendering = (imgsOn && clean) || slot % 2 === 0 ? 'pixelated' : 'auto';
+    MODES[slot % MODES.length](t);
     function drawImgs(){
       drawImgGlitched(joint, W / 2, H / 2, 56, t * 1.4, clean);
       drawSmoke(t * 1.4);
