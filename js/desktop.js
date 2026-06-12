@@ -46,7 +46,6 @@
     { app: 'terminal',     glyph: '💻', label: 'TERMINAL', file: 'apps/terminal.html',    w: 560, h: 380 },
     { app: 'chess',        glyph: '♞',  label: 'CHESS',    file: 'apps/chess.html',       w: 545, h: 412 },
     { app: 'paint',        glyph: '🎨', label: 'PAINT',    file: 'apps/paint.html',       w: 600, h: 460 },
-    { app: 'sys-error',    glyph: '⚠️', label: 'SYS_ERR'  },
     { app: 'trash',        glyph: '🗑️', label: 'CESTINO'  },
   ];
 
