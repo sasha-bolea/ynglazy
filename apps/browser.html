@@ -286,7 +286,8 @@ function renderEmbed(){
     `</div>` +
     `<iframe class="bw-embed" src="${esc(PRESAVE.url)}" ` +
       `title="PRE-SAVE ${esc(PRESAVE.release)}" ` +
-      `allow="clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+      `allow="clipboard-write" referrerpolicy="no-referrer-when-downgrade" ` +
+      `sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`;
 }
 
 document.getElementById('bw-reload').onclick = () => renderActive();
