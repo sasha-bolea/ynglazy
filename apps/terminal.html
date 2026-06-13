@@ -675,11 +675,11 @@ const COMMANDS = {
     // traccia reale: metadata fake + apertura spotify
     print(esc(v.meta));
     print(`▶ apertura spotify… <a href="${v.url}" target="_blank" rel="noopener">link manuale</a>`);
-    window.open(v.url, '_blank', 'noopener');
+    (window.top || window).open(v.url, '_blank', 'noopener');
   },
   play(){
     print(`▶ apertura spotify… <a href="${SPOTIFY}" target="_blank" rel="noopener">link manuale</a>`);
-    window.open(SPOTIFY, '_blank', 'noopener');
+    (window.top || window).open(SPOTIFY, '_blank', 'noopener');
   },
   date(){
     // l'OS è convinto di essere nel 1987

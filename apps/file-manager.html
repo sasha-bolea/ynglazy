@@ -346,7 +346,7 @@ function selectRow(el){
    spotify, tutto il resto si apre come finestra-viewer dell'OS */
 function activate(node){
   if(node.kind === 'folder' || node.kind === 'project') return go([...path, node.name]);
-  if(node.kind === 'song')   return window.open(node.url, '_blank', 'noopener');
+  if(node.kind === 'song')   return (window.top || window).open(node.url, '_blank', 'noopener');
   openFileWin(node);
 }
 
